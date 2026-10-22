@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: finance-tracker-db
+    environment:
+      POSTGRES_DB: finance_tracker
+      POSTGRES_USER: finance_user
+      POSTGRES_PASSWORD: finance_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ../services/auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_password
+    restart: on-failure
+
+  transaction-service:
+    build: ../services/transaction-service
+    container_name: transaction-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_password
+    restart: on-failure
+
+  budget-service:
+    build: ../services/budget-service
+    container_name: budget-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_password
+    restart: on-failure
+
+  debt-service:
+    build: ../services/debt-service
+    container_name: debt-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_password
+    restart: on-failure
+
+  dashboard-service:
+    build: ../services/dashboard-service
+    container_name: dashboard-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      transaction-service:
+        condition: service_started
+      budget-service:
+        condition: service_started
+      debt-service:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_password
+      TRANSACTION.SERVICE.URL: http://transaction-service:8082
+      BUDGET.SERVICE.URL: http://budget-service:8083
+      DEBT.SERVICE.URL: http://debt-service:8084
+    restart: on-failure
+
+  api-gateway:
+    build: .
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - transaction-service
+      - budget-service
+      - debt-service
+      - dashboard-service
+    restart: on-failure
+
+volumes:
+  postgres_data:
