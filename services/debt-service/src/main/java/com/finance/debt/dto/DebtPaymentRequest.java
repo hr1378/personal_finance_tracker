@@ -2,6 +2,7 @@ package com.finance.debt.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public class DebtPaymentRequest {
     private UUID userId;

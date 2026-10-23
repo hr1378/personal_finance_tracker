@@ -26,39 +26,45 @@ export function Sidebar({ currentView, onViewChange, totalTransactions, totalBud
       {/* Mobile menu button */}
       <button
         onClick={() => setIsMobileMenuOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-surface border border-border-light rounded-lg shadow-card"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 brutal-border brutal-shadow-sm"
+        style={{ backgroundColor: '#f4f4f0', borderColor: '#000000' }}
       >
-        <Menu className="w-5 h-5 text-text-primary" />
+        <Menu className="w-5 h-5" style={{ color: '#000000' }} />
       </button>
 
       {/* Mobile overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/70 z-40"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-surface border-r border-border-light flex flex-col z-50 transition-transform duration-300 ${
-        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } w-64`}>
-        <div className="p-6 border-b border-border-light flex justify-between items-center">
+      <aside
+        className={`fixed left-0 top-0 h-full flex flex-col z-50 transition-transform duration-300 ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } w-64`}
+        style={{ backgroundColor: '#f4f4f0', borderRight: '3px solid #000000' }}
+      >
+        <div className="p-6 flex justify-between items-center" style={{ borderBottom: '3px solid #000000' }}>
           <div>
-            <h1 className="text-xl font-semibold text-text-primary">Personal Finance</h1>
-            <p className="text-text-secondary text-sm mt-1">Dashboard</p>
+            <h1 className="text-xl font-bold uppercase tracking-wider" style={{ color: '#000000' }}>Finance</h1>
+            <p className="text-xs mt-1 uppercase tracking-widest" style={{ color: '#666666' }}>Dashboard</p>
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-1 hover:bg-background rounded-lg transition-colors"
+            className="lg:hidden p-1 transition-colors"
+            style={{ hover: { backgroundColor: '#e8e8e4' } }}
           >
-            <X className="w-5 h-5 text-text-secondary" />
+            <X className="w-5 h-5" style={{ color: '#333333' }} />
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {views.map((view) => {
             const Icon = view.icon
+            const isActive = currentView === view.id
             return (
               <button
                 key={view.id}
@@ -66,32 +72,48 @@ export function Sidebar({ currentView, onViewChange, totalTransactions, totalBud
                   onViewChange(view.id as View)
                   setIsMobileMenuOpen(false)
                 }}
-                className={`w-full text-left px-4 py-2.5 rounded-lg transition-colors flex items-center gap-3 ${
-                  currentView === view.id
-                    ? 'bg-primary text-white'
-                    : 'text-text-secondary hover:bg-background hover:text-text-primary'
-                }`}
+                className="w-full text-left px-4 py-3 brutal-border-sm transition-all flex items-center gap-3 font-bold uppercase text-sm tracking-wider"
+                style={{
+                  backgroundColor: isActive ? '#ff3b30' : '#f4f4f0',
+                  color: isActive ? '#ffffff' : '#333333',
+                  borderColor: isActive ? '#000000' : 'transparent',
+                  boxShadow: isActive ? '2px 2px 0 0 #000000' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = '#000000'
+                    e.currentTarget.style.backgroundColor = '#e8e8e4'
+                    e.currentTarget.style.color = '#000000'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'transparent'
+                    e.currentTarget.style.backgroundColor = '#f4f4f0'
+                    e.currentTarget.style.color = '#333333'
+                  }
+                }}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium">{view.label}</span>
+                <span>{view.label}</span>
               </button>
             )
           })}
         </nav>
 
-        <div className="p-6 border-t border-border-light space-y-4">
+        <div className="p-6 space-y-4" style={{ borderTop: '3px solid #000000' }}>
           <div className="text-sm">
-            <p className="text-text-secondary">Total Transactions</p>
-            <p className="text-2xl font-semibold text-text-primary mt-1">{totalTransactions}</p>
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#666666' }}>Transactions</p>
+            <p className="text-2xl font-bold mt-1" style={{ color: '#000000' }}>{totalTransactions}</p>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-text-secondary">Budgets</p>
-              <p className="text-xl font-semibold text-text-primary mt-1">{totalBudgets}</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#666666' }}>Budgets</p>
+              <p className="text-xl font-bold mt-1" style={{ color: '#000000' }}>{totalBudgets}</p>
             </div>
             <div>
-              <p className="text-text-secondary">Debts</p>
-              <p className="text-xl font-semibold text-text-primary mt-1">{totalDebts}</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#666666' }}>Debts</p>
+              <p className="text-xl font-bold mt-1" style={{ color: '#000000' }}>{totalDebts}</p>
             </div>
           </div>
         </div>

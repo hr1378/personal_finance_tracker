@@ -11,10 +11,11 @@ export function Card({ children, className, hover = false }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-surface border border-border-light rounded-xl shadow-card',
-        hover && 'hover:shadow-card-hover transition-shadow',
+        'brutal-border brutal-shadow-sm transition-all',
+        hover && 'hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5',
         className
       )}
+      style={{ backgroundColor: '#f4f4f0', borderColor: '#000000' }}
     >
       {children}
     </div>

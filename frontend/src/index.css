@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+@layer utilities {
+  .brutal-shadow {
+    box-shadow: 4px 4px 0 0 #000000;
+  }
+
+  .brutal-shadow-sm {
+    box-shadow: 2px 2px 0 0 #000000;
+  }
+
+  .brutal-shadow-lg {
+    box-shadow: 6px 6px 0 0 #000000;
+  }
+
+  .brutal-border {
+    border-width: 3px;
+  }
+
+  .brutal-border-sm {
+    border-width: 2px;
+  }
+}

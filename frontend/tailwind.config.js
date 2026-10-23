@@ -7,70 +7,83 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Backgrounds
+        // Brutalist monochrome base
         bg: {
-          base: '#fafbfc',
-          surface: '#ffffff',
-          muted: '#f5f6f7',
+          base: '#ffffff',
+          surface: '#f4f4f0',
+          muted: '#e8e8e4',
+          accent: '#f0f0ec',
         },
-        
-        // Text colors - refined grayscale
+
+        // High contrast text
         text: {
-          primary: '#111827',      // Near black
-          secondary: '#4b5563',    // Muted gray
-          tertiary: '#9ca3af',     // Light gray
+          primary: '#000000',
+          secondary: '#333333',
+          tertiary: '#666666',
           inverse: '#ffffff',
         },
-        
-        // Accent colors - sophisticated and muted
+
+        // Bold brutalist accent colors
         accent: {
-          primary: '#0d9488',      // Refined teal
-          primaryHover: '#0f766e',
-          primaryLight: '#ccfbf1',
-          
-          success: '#059669',       // Muted emerald
-          successLight: '#d1fae5',
-          
-          danger: '#dc2626',        // Refined red
-          dangerLight: '#fee2e2',
-          
-          warning: '#d97706',       // Refined amber
-          warningLight: '#fef3c7',
-          
-          info: '#2563eb',          // Refined blue
-          infoLight: '#dbeafe',
+          primary: '#ff3b30',      // Vibrant red
+          primaryHover: '#d63026',
+          primaryLight: '#ffe5e5',
+
+          success: '#34c759',     // Bright green
+          successLight: '#e8f9ee',
+
+          danger: '#ff3b30',       // Same as primary - brutalist consistency
+          dangerLight: '#ffe5e5',
+
+          warning: '#ff9500',     // Bold orange
+          warningLight: '#fff4e6',
+
+          info: '#007aff',        // Strong blue
+          infoLight: '#e6f2ff',
+
+          yellow: '#ffcc00',      // Pure yellow
+          purple: '#af52de',      // Bold purple
         },
-        
-        // Border colors - subtle
+
+        // Sharp, visible borders
         border: {
-          base: '#e5e7eb',
-          subtle: '#f3f4f6',
-          hover: '#d1d5db',
+          base: '#000000',
+          light: '#cccccc',
+          accent: '#ff3b30',
         },
-        
+
         // Semantic colors for charts
         chart: {
-          income: '#0d9488',
-          expense: '#dc2626',
-          neutral: '#9ca3af',
+          income: '#34c759',
+          expense: '#ff3b30',
+          neutral: '#999999',
         },
       },
-      
+
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
-      
+
       borderRadius: {
-        'card': '12px',
-        'button': '8px',
+        'none': '0',
+        'sm': '2px',
+        'card': '0',
+        'button': '0',
       },
-      
+
       boxShadow: {
-        'card': '0 1px 2px 0 rgb(0 0 0 / 0.05), 0 1px 3px 1px rgb(0 0 0 / 0.05)',
-        'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-        'subtle': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
+        'none': 'none',
+        'brutal': '4px 4px 0 0 #000000',
+        'brutal-sm': '2px 2px 0 0 #000000',
+        'brutal-lg': '6px 6px 0 0 #000000',
       },
-      
+
+      borderWidth: {
+        'brutal': '3px',
+        'brutal-sm': '2px',
+      },
+
       spacing: {
         '18': '4.5rem',
       },

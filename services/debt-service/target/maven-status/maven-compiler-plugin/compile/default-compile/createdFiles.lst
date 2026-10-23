@@ -1,0 +1,10 @@
+com/finance/debt/dto/DebtPaymentRequest.class
+com/finance/debt/repository/DebtPaymentRepository.class
+com/finance/debt/dto/DebtRequest.class
+com/finance/debt/model/Debt.class
+com/finance/debt/repository/DebtRepository.class
+com/finance/debt/service/DebtService.class
+com/finance/debt/controller/DebtController.class
+com/finance/debt/model/DebtPayment.class
+com/finance/debt/DebtServiceApplication.class
+com/finance/debt/config/CorsConfig.class

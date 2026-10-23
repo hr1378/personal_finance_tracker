@@ -1,6 +1,7 @@
 package com.finance.budget.dto;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public class BudgetRequest {
     private UUID userId;

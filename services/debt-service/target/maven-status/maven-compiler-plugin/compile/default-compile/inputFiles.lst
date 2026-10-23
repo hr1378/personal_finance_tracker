@@ -1,0 +1,10 @@
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/DebtServiceApplication.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/config/CorsConfig.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/controller/DebtController.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/dto/DebtPaymentRequest.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/dto/DebtRequest.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/model/Debt.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/model/DebtPayment.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/repository/DebtPaymentRepository.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/repository/DebtRepository.java
+/Users/hatim/Desktop/Desktop/personal_finance_project/services/debt-service/src/main/java/com/finance/debt/service/DebtService.java
