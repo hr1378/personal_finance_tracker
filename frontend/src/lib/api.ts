@@ -104,7 +104,8 @@ export const api = {
       amount: b.spendingLimit,
       spent: 0, // Would need to calculate from transactions
       month: b.month,
-      year: b.year
+      year: b.year,
+      renewalDate: undefined // Backend doesn't have this field yet
     }))
   },
 
@@ -138,7 +139,8 @@ export const api = {
       amount: backendBudget.spendingLimit,
       spent: 0,
       month: backendBudget.month,
-      year: backendBudget.year
+      year: backendBudget.year,
+      renewalDate: data.renewalDate
     }
   },
 
@@ -165,7 +167,8 @@ export const api = {
       amount: backendBudget.spendingLimit,
       spent: 0,
       month: backendBudget.month,
-      year: backendBudget.year
+      year: backendBudget.year,
+      renewalDate: data.renewalDate
     }
   },
 

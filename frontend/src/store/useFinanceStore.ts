@@ -19,6 +19,7 @@ interface FinanceStore {
   addBudget: (data: BudgetRequest) => Promise<void>
   updateBudget: (id: string, data: BudgetRequest) => Promise<void>
   deleteBudget: (id: string) => Promise<void>
+  setBudgetManually: (id: string, amount: number) => Promise<void>
   fetchDebts: (userId: string) => Promise<void>
   addDebt: (data: DebtRequest) => Promise<void>
   updateDebt: (id: string, data: DebtRequest) => Promise<void>
@@ -129,6 +130,28 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
       }))
     } catch (error) {
       set({ error: 'Failed to delete budget', isLoading: false })
+    }
+  },
+
+  setBudgetManually: async (id: string, amount: number) => {
+    set({ isLoading: true, error: null })
+    try {
+      const budget = useFinanceStore.getState().budgets.find(b => b.id === id)
+      if (!budget) throw new Error('Budget not found')
+      await api.updateBudget(id, {
+        userId: budget.userId,
+        category: budget.category,
+        amount,
+        month: budget.month,
+        year: budget.year,
+        renewalDate: budget.renewalDate
+      })
+      set((state) => ({
+        budgets: state.budgets.map(b => b.id === id ? { ...b, amount } : b),
+        isLoading: false
+      }))
+    } catch (error) {
+      set({ error: 'Failed to update budget', isLoading: false })
     }
   },
 

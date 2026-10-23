@@ -10,7 +10,7 @@ import { PageHeader } from './components/layout/PageHeader'
 import { toast } from 'sonner'
 import { useFinanceStore } from './store/useFinanceStore'
 import type { View } from './types'
-import type { Budget, Debt } from './types/finance'
+import type { Budget, Debt, BudgetRequest } from './types/finance'
 
 function App() {
   const {
@@ -25,7 +25,9 @@ function App() {
     fetchBudgets,
     fetchDebts,
     addTransaction,
-    deleteTransaction
+    deleteTransaction,
+    addBudget,
+    setBudgetManually
   } = useFinanceStore()
 
   const [currentView, setCurrentView] = useState<View>('overview')
@@ -89,6 +91,40 @@ function App() {
     }
   }
 
+  const handleAddBudget = async (data: any) => {
+    if (!data.category || !data.amount) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await addBudget({
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        category: data.category,
+        amount: data.amount,
+        month: data.month,
+        year: data.year,
+        renewalDate: data.renewalDate || undefined
+      })
+      toast.success('Budget added successfully')
+    } catch (error) {
+      toast.error('Failed to add budget')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleUpdateBudget = async (id: string, amount: number) => {
+    try {
+      await setBudgetManually(id, amount)
+      toast.success('Budget updated successfully')
+    } catch (error) {
+      toast.error('Failed to update budget')
+    }
+  }
+
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#ffffff' }}>
       <Sidebar
@@ -118,25 +154,29 @@ function App() {
               title={currentView.charAt(0).toUpperCase() + currentView.slice(1)}
               subtitle="Your financial picture at a glance"
               actions={
-                <>
-                  <select
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value as 'all' | 'month' | 'year')}
-                    className="px-4 py-2 brutal-border brutal-shadow-sm text-sm font-bold uppercase tracking-wider focus:outline-none"
-                    style={{ backgroundColor: '#f4f4f0', color: '#000000', borderColor: '#000000' }}
-                  >
-                    <option value="all">All Time</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                  </select>
-                  <button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-4 py-2 brutal-border brutal-shadow-sm hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all font-bold uppercase tracking-wider"
-                    style={{ backgroundColor: '#ff3b30', color: '#ffffff', borderColor: '#000000' }}
-                  >
-                    + Add Transaction
-                  </button>
-                </>
+                currentView === 'budgets' ? (
+                  <></>
+                ) : (
+                  <>
+                    <select
+                      value={timeFilter}
+                      onChange={(e) => setTimeFilter(e.target.value as 'all' | 'month' | 'year')}
+                      className="px-4 py-2 brutal-border brutal-shadow-sm text-sm font-bold uppercase tracking-wider focus:outline-none"
+                      style={{ backgroundColor: '#f4f4f0', color: '#000000', borderColor: '#000000' }}
+                    >
+                      <option value="all">All Time</option>
+                      <option value="month">This Month</option>
+                      <option value="year">This Year</option>
+                    </select>
+                    <button
+                      onClick={() => setShowAddForm(!showAddForm)}
+                      className="px-4 py-2 brutal-border brutal-shadow-sm hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all font-bold uppercase tracking-wider"
+                      style={{ backgroundColor: '#ff3b30', color: '#ffffff', borderColor: '#000000' }}
+                    >
+                      + Add Transaction
+                    </button>
+                  </>
+                )
               }
             />
 
@@ -165,7 +205,12 @@ function App() {
             )}
 
             {currentView === 'budgets' && (
-              <Budgets budgets={budgets} />
+              <Budgets
+                budgets={budgets}
+                onAddBudget={handleAddBudget}
+                onUpdateBudget={handleUpdateBudget}
+                isSubmitting={isSubmitting}
+              />
             )}
 
             {currentView === 'debts' && (

@@ -1,22 +1,42 @@
+import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Wallet, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react'
+import { Wallet, TrendingUp, CheckCircle, AlertCircle, Plus, Edit2, X } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { formatCurrency } from '../lib/utils'
-
-interface Budget {
-  id: string
-  category: string
-  amount: number
-  spent: number
-  month: number
-  year: number
-}
+import { AddBudgetForm } from '../components/AddBudgetForm'
+import { toast } from 'sonner'
+import type { Budget } from '../types/finance'
 
 interface BudgetsProps {
   budgets: Budget[]
+  onAddBudget?: (data: any) => void
+  onUpdateBudget?: (id: string, amount: number) => void
+  isSubmitting?: boolean
 }
 
-export function Budgets({ budgets }: BudgetsProps) {
+export function Budgets({ budgets, onAddBudget, onUpdateBudget, isSubmitting = false }: BudgetsProps) {
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null)
+  const [editAmount, setEditAmount] = useState('')
+  const [alertShown, setAlertShown] = useState(false)
+
+  useEffect(() => {
+    if (budgets.length > 0 && !alertShown) {
+      const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
+      const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0)
+      const remainingBudget = totalBudget - totalSpent
+
+      if (remainingBudget < 0) {
+        toast.error(`Budget Alert: You are over budget by ${formatCurrency(Math.abs(remainingBudget))}!`)
+      } else if (remainingBudget < totalBudget * 0.2) {
+        toast.warning(`Budget Alert: Only ${formatCurrency(remainingBudget)} remaining (${((remainingBudget / totalBudget) * 100).toFixed(0)}% of your total budget)`)
+      } else {
+        toast.success(`Budget Status: You have ${formatCurrency(remainingBudget)} remaining this month.`)
+      }
+      setAlertShown(true)
+    }
+  }, [budgets, alertShown])
+
   const formatMonth = (month: number, year: number) => {
     const date = new Date(year, month - 1)
     return format(date, 'MMMM yyyy')
@@ -33,8 +53,46 @@ export function Budgets({ budgets }: BudgetsProps) {
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0)
   const remainingBudget = totalBudget - totalSpent
 
+  const handleAddBudget = (data: any) => {
+    if (onAddBudget) {
+      onAddBudget(data)
+      setShowAddForm(false)
+    }
+  }
+
+  const handleUpdateBudget = (id: string) => {
+    const amount = parseFloat(editAmount)
+    if (isNaN(amount) || amount <= 0) {
+      return
+    }
+    if (onUpdateBudget) {
+      onUpdateBudget(id, amount)
+      setEditingBudgetId(null)
+      setEditAmount('')
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Add Budget Button */}
+      <button
+        onClick={() => setShowAddForm(!showAddForm)}
+        className="w-full sm:w-auto bg-accent-primary text-white py-2.5 px-4 border-brutal border-border-base brutal-shadow-sm hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+      >
+        <Plus className="w-5 h-5" />
+        {showAddForm ? 'Cancel' : 'Add New Budget'}
+      </button>
+
+      {/* Add Budget Form */}
+      {showAddForm && onAddBudget && (
+        <AddBudgetForm
+          isOpen={showAddForm}
+          onClose={() => setShowAddForm(false)}
+          onSubmit={handleAddBudget}
+          isSubmitting={isSubmitting}
+        />
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-6">
@@ -95,17 +153,70 @@ export function Budgets({ budgets }: BudgetsProps) {
                     <div>
                       <h4 className="font-bold uppercase tracking-wider text-text-primary">{budget.category}</h4>
                       <p className="text-sm font-bold uppercase tracking-wider text-text-tertiary">{formatMonth(budget.month, budget.year)}</p>
+                      {budget.renewalDate && (
+                        <p className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                          Renews: {format(parseISO(budget.renewalDate), 'MMM dd, yyyy')}
+                        </p>
+                      )}
                     </div>
-                    <span className={`px-3 py-1 border-brutal-sm border-border-base text-xs font-bold uppercase tracking-wider flex items-center gap-1 ${
-                      status.color === 'danger' ? 'bg-accent-dangerLight text-accent-danger' :
-                      status.color === 'warning' ? 'bg-accent-warningLight text-accent-warning' :
-                      'bg-accent-successLight text-accent-success'
-                    }`}>
-                      {status.color === 'danger' && <AlertCircle className="w-3 h-3" />}
-                      {status.color === 'primary' && <CheckCircle className="w-3 h-3" />}
-                      {status.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 border-brutal-sm border-border-base text-xs font-bold uppercase tracking-wider flex items-center gap-1 ${
+                        status.color === 'danger' ? 'bg-accent-dangerLight text-accent-danger' :
+                        status.color === 'warning' ? 'bg-accent-warningLight text-accent-warning' :
+                        'bg-accent-successLight text-accent-success'
+                      }`}>
+                        {status.color === 'danger' && <AlertCircle className="w-3 h-3" />}
+                        {status.color === 'primary' && <CheckCircle className="w-3 h-3" />}
+                        {status.status}
+                      </span>
+                      {onUpdateBudget && (
+                        <button
+                          onClick={() => {
+                            setEditingBudgetId(budget.id)
+                            setEditAmount(budget.amount.toString())
+                          }}
+                          className="text-text-tertiary hover:text-text-primary transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Manual Budget Edit */}
+                  {editingBudgetId === budget.id && onUpdateBudget && (
+                    <div className="mb-3 p-3 border-brutal-sm border-border-base bg-bg-accent">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-sm">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="w-full pl-7 pr-3 py-2 border-brutal border-border-base brutal-shadow-sm bg-bg-surface text-text-primary font-bold text-sm focus:outline-none focus:brutal-shadow"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleUpdateBudget(budget.id)}
+                          className="px-3 py-2 bg-accent-success text-white border-brutal border-border-base brutal-shadow-sm font-bold uppercase tracking-wider text-sm hover:brutal-shadow"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingBudgetId(null)
+                            setEditAmount('')
+                          }}
+                          className="px-3 py-2 bg-accent-danger text-white border-brutal border-border-base brutal-shadow-sm font-bold uppercase tracking-wider text-sm hover:brutal-shadow"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mb-3">
                     <div className="flex justify-between text-sm mb-2">

@@ -32,6 +32,7 @@ export interface Budget {
   spent: number
   month: number
   year: number
+  renewalDate?: string
 }
 
 export interface BudgetRequest {
@@ -40,6 +41,7 @@ export interface BudgetRequest {
   amount: number
   month: number
   year: number
+  renewalDate?: string
 }
 
 export interface Debt {
