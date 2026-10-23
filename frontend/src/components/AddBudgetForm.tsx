@@ -52,8 +52,9 @@ export function AddBudgetForm({ isOpen, onClose, onSubmit, isSubmitting }: AddBu
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Category</label>
+          <label htmlFor="category" className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Category</label>
           <input
+            id="category"
             type="text"
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -62,10 +63,11 @@ export function AddBudgetForm({ isOpen, onClose, onSubmit, isSubmitting }: AddBu
           />
         </div>
         <div>
-          <label className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Budget Amount</label>
+          <label htmlFor="amount" className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Budget Amount</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold">$</span>
             <input
+              id="amount"
               type="number"
               step="0.01"
               min="0"
@@ -77,8 +79,9 @@ export function AddBudgetForm({ isOpen, onClose, onSubmit, isSubmitting }: AddBu
           </div>
         </div>
         <div>
-          <label className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Month</label>
+          <label htmlFor="month" className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Month</label>
           <select
+            id="month"
             value={formData.month}
             onChange={(e) => setFormData({ ...formData, month: parseInt(e.target.value) })}
             className="w-full px-4 py-2.5 border-brutal border-border-base brutal-shadow-sm bg-bg-surface text-text-primary font-bold uppercase tracking-wider focus:outline-none focus:brutal-shadow"
@@ -98,8 +101,9 @@ export function AddBudgetForm({ isOpen, onClose, onSubmit, isSubmitting }: AddBu
           </select>
         </div>
         <div>
-          <label className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Year</label>
+          <label htmlFor="year" className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Year</label>
           <input
+            id="year"
             type="number"
             min="2020"
             max="2030"
@@ -109,8 +113,9 @@ export function AddBudgetForm({ isOpen, onClose, onSubmit, isSubmitting }: AddBu
           />
         </div>
         <div>
-          <label className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Renewal Date (Optional)</label>
+          <label htmlFor="renewalDate" className="block text-sm font-bold uppercase tracking-wider text-text-primary mb-2">Renewal Date (Optional)</label>
           <input
+            id="renewalDate"
             type="date"
             value={formData.renewalDate}
             onChange={(e) => setFormData({ ...formData, renewalDate: e.target.value })}
