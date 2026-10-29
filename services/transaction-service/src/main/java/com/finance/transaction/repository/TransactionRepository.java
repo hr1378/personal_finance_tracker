@@ -16,6 +16,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByType(TransactionType type);
 
+    List<Transaction> findByUserIdAndType(UUID userId, TransactionType type);
+
     List<Transaction> findByTypeAndDateBetween(TransactionType type, LocalDate startDate, LocalDate endDate);
 
     List<Transaction> findByDateBetween(LocalDate startDate, LocalDate endDate);

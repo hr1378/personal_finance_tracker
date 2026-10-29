@@ -1,6 +1,7 @@
 package com.finance.dashboard.service;
 
 import com.finance.dashboard.dto.DashboardSummary;
+import com.finance.dashboard.filter.UserContextFilter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -24,11 +25,26 @@ public class DashboardService {
         this.debtWebClient = debtWebClient;
     }
 
+    private UUID getCurrentUserId() {
+        UUID userId = UserContextFilter.currentUserId.get();
+        if (userId == null) {
+            throw new SecurityException("User not authenticated");
+        }
+        return userId;
+    }
+
     public Mono<DashboardSummary> getDashboardSummary(UUID userId) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own dashboard
+        if (userId != null && !userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's dashboard");
+        }
+
         return Mono.zip(
-                fetchTransactionSummary(userId),
-                fetchDebtSummary(userId),
-                fetchBudgetSummary(userId)
+                fetchTransactionSummary(currentUserId),
+                fetchDebtSummary(currentUserId),
+                fetchBudgetSummary(currentUserId)
         ).map(tuple -> {
             DashboardSummary summary = new DashboardSummary();
             summary.setTotalIncome(tuple.getT1().getTotalIncome());
@@ -42,7 +58,7 @@ public class DashboardService {
 
     private Mono<TransactionSummary> fetchTransactionSummary(UUID userId) {
         return transactionWebClient.get()
-                .uri("/api/transactions/summary")
+                .uri("/api/transactions/summary?userId={userId}", userId)
                 .retrieve()
                 .bodyToMono(TransactionSummary.class);
     }
