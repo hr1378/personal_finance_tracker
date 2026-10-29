@@ -1,6 +1,7 @@
 package com.finance.budget.service;
 
 import com.finance.budget.dto.BudgetRequest;
+import com.finance.budget.filter.UserContextFilter;
 import com.finance.budget.model.Budget;
 import com.finance.budget.repository.BudgetRepository;
 import org.springframework.stereotype.Service;
@@ -21,9 +22,29 @@ public class BudgetService {
         this.budgetRepository = budgetRepository;
     }
 
+    private UUID getCurrentUserId() {
+        UUID userId = UserContextFilter.currentUserId.get();
+        if (userId == null) {
+            throw new SecurityException("User not authenticated");
+        }
+        return userId;
+    }
+
+    private void verifyOwnership(UUID budgetId, UUID userId) {
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new RuntimeException("Budget not found with id: " + budgetId));
+
+        if (!budget.getUserId().equals(userId)) {
+            throw new SecurityException("Access denied: Budget does not belong to user");
+        }
+    }
+
     public Budget createBudget(BudgetRequest request) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Override the user ID from request with authenticated user ID
         Budget budget = new Budget();
-        budget.setUserId(request.getUserId());
+        budget.setUserId(currentUserId);
         budget.setCategory(request.getCategory());
         budget.setMonth(request.getMonth());
         budget.setYear(request.getYear());
@@ -32,19 +53,39 @@ public class BudgetService {
     }
 
     public List<Budget> getBudgetsByUser(UUID userId) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own budgets
+        if (!userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's budgets");
+        }
+
         return budgetRepository.findByUserId(userId);
     }
 
     public List<Budget> getBudgetsByUserAndMonth(UUID userId, Integer month, Integer year) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own budgets
+        if (!userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's budgets");
+        }
+
         return budgetRepository.findByUserIdAndMonthAndYear(userId, month, year);
     }
 
     public Budget getBudgetById(UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         return budgetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Budget not found"));
     }
 
     public Budget updateBudget(UUID id, BudgetRequest request) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         Budget budget = getBudgetById(id);
         budget.setCategory(request.getCategory());
         budget.setMonth(request.getMonth());
@@ -55,6 +96,9 @@ public class BudgetService {
     }
 
     public void deleteBudget(UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         if (!budgetRepository.existsById(id)) {
             throw new RuntimeException("Budget not found");
         }

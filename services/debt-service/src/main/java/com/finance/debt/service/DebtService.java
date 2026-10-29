@@ -2,6 +2,7 @@ package com.finance.debt.service;
 
 import com.finance.debt.dto.DebtPaymentRequest;
 import com.finance.debt.dto.DebtRequest;
+import com.finance.debt.filter.UserContextFilter;
 import com.finance.debt.model.Debt;
 import com.finance.debt.model.DebtPayment;
 import com.finance.debt.repository.DebtPaymentRepository;
@@ -26,9 +27,29 @@ public class DebtService {
         this.debtPaymentRepository = debtPaymentRepository;
     }
 
+    private UUID getCurrentUserId() {
+        UUID userId = UserContextFilter.currentUserId.get();
+        if (userId == null) {
+            throw new SecurityException("User not authenticated");
+        }
+        return userId;
+    }
+
+    private void verifyOwnership(UUID debtId, UUID userId) {
+        Debt debt = debtRepository.findById(debtId)
+                .orElseThrow(() -> new RuntimeException("Debt not found with id: " + debtId));
+
+        if (!debt.getUserId().equals(userId)) {
+            throw new SecurityException("Access denied: Debt does not belong to user");
+        }
+    }
+
     public Debt createDebt(DebtRequest request) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Override the user ID from request with authenticated user ID
         Debt debt = new Debt();
-        debt.setUserId(request.getUserId());
+        debt.setUserId(currentUserId);
         debt.setName(request.getName());
         debt.setOriginalBalance(request.getOriginalBalance());
         debt.setCurrentBalance(request.getCurrentBalance());
@@ -39,15 +60,28 @@ public class DebtService {
     }
 
     public List<Debt> getDebtsByUser(UUID userId) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own debts
+        if (!userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's debts");
+        }
+
         return debtRepository.findByUserId(userId);
     }
 
     public Debt getDebtById(UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         return debtRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Debt not found"));
     }
 
     public Debt updateDebt(UUID id, DebtRequest request) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         Debt debt = getDebtById(id);
         debt.setName(request.getName());
         debt.setCurrentBalance(request.getCurrentBalance());
@@ -59,6 +93,9 @@ public class DebtService {
     }
 
     public void deleteDebt(UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         if (!debtRepository.existsById(id)) {
             throw new RuntimeException("Debt not found");
         }
@@ -66,8 +103,11 @@ public class DebtService {
     }
 
     public DebtPayment createPayment(DebtPaymentRequest request) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(request.getDebtId(), currentUserId);
+
         DebtPayment payment = new DebtPayment();
-        payment.setUserId(request.getUserId());
+        payment.setUserId(currentUserId);
         payment.setDebtId(request.getDebtId());
         payment.setAmount(request.getAmount());
         payment.setPaymentDate(request.getPaymentDate());
@@ -85,14 +125,27 @@ public class DebtService {
     }
 
     public List<DebtPayment> getPaymentsByDebt(UUID debtId) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(debtId, currentUserId);
+
         return debtPaymentRepository.findByDebtId(debtId);
     }
 
     public List<DebtPayment> getPaymentsByUser(UUID userId) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own payments
+        if (!userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's payments");
+        }
+
         return debtPaymentRepository.findByUserId(userId);
     }
 
     public BigDecimal calculateProgress(UUID debtId) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(debtId, currentUserId);
+
         Debt debt = getDebtById(debtId);
         if (debt.getOriginalBalance().compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ZERO;

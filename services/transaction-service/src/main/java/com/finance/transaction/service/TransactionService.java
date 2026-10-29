@@ -2,6 +2,7 @@ package com.finance.transaction.service;
 
 import com.finance.transaction.dto.TransactionRequest;
 import com.finance.transaction.dto.TransactionSummary;
+import com.finance.transaction.filter.UserContextFilter;
 import com.finance.transaction.model.Transaction;
 import com.finance.transaction.model.TransactionType;
 import com.finance.transaction.repository.TransactionRepository;
@@ -23,9 +24,29 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
+    private UUID getCurrentUserId() {
+        UUID userId = UserContextFilter.currentUserId.get();
+        if (userId == null) {
+            throw new SecurityException("User not authenticated");
+        }
+        return userId;
+    }
+
+    private void verifyOwnership(UUID transactionId, UUID userId) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found with id: " + transactionId));
+
+        if (!transaction.getUserId().equals(userId)) {
+            throw new SecurityException("Access denied: Transaction does not belong to user");
+        }
+    }
+
     public Transaction createTransaction(TransactionRequest request) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Override the user ID from request with authenticated user ID
         Transaction transaction = new Transaction(
-                request.getUserId(),
+                currentUserId,
                 request.getType(),
                 request.getAmount(),
                 request.getCategory(),
@@ -36,23 +57,38 @@ public class TransactionService {
     }
 
     public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
+        UUID currentUserId = getCurrentUserId();
+        return transactionRepository.findByUserId(currentUserId);
     }
 
     public List<Transaction> getTransactionsByUser(UUID userId) {
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own transactions
+        if (!userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's transactions");
+        }
+
         return transactionRepository.findByUserId(userId);
     }
 
     public List<Transaction> getTransactionsByType(TransactionType type) {
-        return transactionRepository.findByType(type);
+        UUID currentUserId = getCurrentUserId();
+        return transactionRepository.findByUserIdAndType(currentUserId, type);
     }
 
     public Transaction getTransactionById(UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         return transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found with id: " + id));
     }
 
     public void deleteTransaction(UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        verifyOwnership(id, currentUserId);
+
         if (!transactionRepository.existsById(id)) {
             throw new RuntimeException("Transaction not found with id: " + id);
         }
@@ -60,9 +96,14 @@ public class TransactionService {
     }
 
     public TransactionSummary getSummary(UUID userId) {
-        List<Transaction> transactions = userId != null 
-            ? transactionRepository.findByUserId(userId)
-            : transactionRepository.findAll();
+        UUID currentUserId = getCurrentUserId();
+
+        // Users can only view their own summary
+        if (userId != null && !userId.equals(currentUserId)) {
+            throw new SecurityException("Access denied: Cannot view other user's summary");
+        }
+
+        List<Transaction> transactions = transactionRepository.findByUserId(currentUserId);
         BigDecimal totalIncome = transactions.stream()
                 .filter(t -> t.getType() == TransactionType.INCOME)
                 .map(Transaction::getAmount)
