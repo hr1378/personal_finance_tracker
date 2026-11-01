@@ -2,264 +2,250 @@
 
 Based on PROJECT 1 weeks 1 & 2 requirements
 
-## ✅ COMPLETED FEATURES
+## ✅ COMPLETED
 
-### Week 1 - Setup, Authentication, Transactions, and Dashboard
+### Frontend
+- Set up React, TypeScript, Tailwind CSS
+- Application layout with Sidebar
+- Build login and registration pages
+- Create dashboard screen (Overview.tsx)
+- Build transaction management UI (Transactions.tsx)
+- Build transaction forms (AddTransactionForm.tsx)
+- Category selection and filters
+- Add responsive layouts
+- Form validation (React Hook Form)
+- Integrate frontend with API Gateway
+- Build budget creation and editing screens (Budgets.tsx)
+- Display budget usage and remaining amounts
+- Build debt management screen (Debts.tsx)
+- Display outstanding balances and due dates
+- Display repayment progress
+- Integrate dashboard summaries from backend services
+- Add loading, empty, success, and error states
+- Finish responsive UI
+- Basic accessibility checks
 
-#### Frontend
-- [x] Set up React, TypeScript, Tailwind CSS
-- [x] Application layout with Sidebar
-- [x] Build login and registration pages
-- [x] Create dashboard screen (Overview.tsx)
-- [x] Build transaction management UI (Transactions.tsx)
-- [x] Build transaction forms (AddTransactionForm.tsx)
-- [x] Category selection and filters
-- [x] Add responsive layouts
-- [x] Form validation (React Hook Form)
-- [x] Integrate frontend with API Gateway (direct service calls currently)
+### Backend Services
+- Set up Java 21, Spring Boot, Maven
+- Establish monorepo structure (frontend/, services/, infrastructure/)
+- Configure Docker and Docker Compose for local development
+- Implement Authentication and User Service
+  - User registration, login, logout
+  - JWT token generation and validation
+  - User profile management
+- Implement API Gateway with Spring Cloud Gateway
+  - Centralized routing to all services
+  - JWT validation filter
+  - User context propagation (X-User-Id header)
+  - CORS configuration
+- Build Transaction Service
+  - CRUD endpoints for transactions
+  - Income and expense tracking
+  - Category filtering
+  - Date filtering
+  - Summary calculations (income, expenses, net cash flow)
+  - Category entity, table, CRUD operations, and seeding
+- Build Budget Service
+  - CRUD operations
+  - Budget spending calculations from actual transaction data
+  - Month-boundary filtering
+- Build Debt Management Service
+  - CRUD operations
+  - Debt payment recording
+  - Payment history
+  - Updated debt balances
+  - Basic payoff estimates
+- Build Dashboard and Reporting Service
+  - Real-time dashboard data aggregation from all services
+  - WebClient communication with other services
+- Configure REST communication between services (WebClient)
+- Service timeout configuration (10 second timeouts)
+- Validate financial inputs
+- Verify database relationships
+- Transaction consistency (debt payments update balances)
+- Data isolation (user ownership checks)
+- User-level authorization enforcement
+- Monetary precision (BigDecimal, NUMERIC columns)
+- Payment consistency
+- Advanced error handling in WebClient
+- Event-driven communication (Kafka for transactions and debt payments)
+- Structured logging (JSON with logback-logback-encoder)
+- Request correlation (Correlation ID filters)
+- Health-check endpoints (Spring Boot Actuator)
 
-#### Backend & Database
-- [x] Set up Java 21, Spring Boot, Maven
-- [x] Establish monorepo structure (frontend/, services/, infrastructure/)
-- [x] Configure Docker and Docker Compose for local development
-- [x] Implement Authentication and User Service
-  - [x] User registration, login, logout
-  - [x] JWT token generation and validation
-  - [x] User profile management
-- [x] Implement API Gateway with Spring Cloud Gateway
-  - [x] Centralized routing to all services
-  - [x] JWT validation filter
-  - [x] User context propagation (X-User-Id header)
-  - [x] CORS configuration
-- [x] Build Transaction Service
-  - [x] CRUD endpoints for transactions
-  - [x] Income and expense tracking
-  - [x] Category filtering
-  - [x] Date filtering
-  - [x] Summary calculations (income, expenses, net cash flow)
-- [x] Create database migrations with Flyway
-  - [x] User profiles table
-  - [x] Transactions table
-  - [x] Budgets table
-  - [x] Debts and debt payments tables
-  - [x] Dashboard tables
-- [x] Use BigDecimal for monetary calculations
-- [x] Use UUID for resource identifiers
-- [x] Enforce user ownership in every service
-- [x] Add input validation and user-level authorization
-- [x] Configure standard API error responses
-- [x] Add health-check endpoints (Spring Boot Actuator)
+### Database
+- Database migrations with Flyway
+  - User profiles table
+  - Transactions table
+  - Budgets table
+  - Debts and debt payments tables
+  - Category table with foreign key relationships
+  - Foreign key constraints for cross-service references
+- Use BigDecimal for monetary calculations
+- Use UUID for resource identifiers
+- Enforce user ownership in every service
+- Add input validation and user-level authorization
+- Configure standard API error responses
 
-#### Testing and DevOps
-- [x] Configure GitHub repository
-- [x] Frontend linting and TypeScript checks
-- [x] Java compilation setup
-- [x] Write backend unit tests (JUnit 5, Mockito)
-  - [x] Auth Service tests
-  - [x] Transaction Service tests
-  - [x] Budget Service tests
-  - [x] Debt Service tests
-- [x] Write integration tests with Testcontainers
-  - [x] Transaction Service integration tests
-- [x] Test protected routes and cross-user access
-- [x] Frontend unit tests (Vitest, React Testing Library)
-  - [x] Budgets component tests
-  - [x] AddBudgetForm tests
-  - [x] API tests
-  - [x] Store tests
+### Testing
+- Backend unit tests (JUnit 5, Mockito)
+  - Auth Service tests
+  - Transaction Service tests
+  - Budget Service tests
+  - Debt Service tests
+  - Budgets, debt payments, payoff calculations
+  - Financial calculations
+  - Payment validation and balance consistency
+- Integration tests with Testcontainers
+  - Transaction Service integration tests
+- API integration tests for budgets, debts, authorization
+- Test invalid inputs, missing resources
+- Test cross-user data access (SecurityException)
+- Test authentication enforcement
+- Frontend unit tests (Vitest, React Testing Library)
+  - Budgets component tests
+  - AddBudgetForm tests
+  - API tests
+  - Store tests
 
-### Week 2 - Budgets, Debt Tracking, Integration, Testing, and Deployment
-
-#### Frontend
-- [x] Build budget creation and editing screens (Budgets.tsx)
-- [x] Display budget usage and remaining amounts
-- [x] Build debt management screen (Debts.tsx)
-- [x] Display outstanding balances and due dates
-- [x] Display repayment progress
-- [x] Integrate dashboard summaries from backend services
-- [x] Add loading, empty, success, and error states
-- [x] Finish responsive UI
-- [x] Basic accessibility checks
-
-#### Backend and Database
-- [x] Implement Budget Service CRUD operations
-- [x] Budget spending calculations from actual transaction data
-- [x] Implement Debt Management Service CRUD operations
-- [x] Implement debt payment recording
-- [x] Maintain payment history
-- [x] Calculate updated debt balances
-- [x] Calculate basic payoff estimates
-- [x] Implement Dashboard and Reporting Service
-- [x] Configure REST communication between services (WebClient)
-- [x] Real-time dashboard data aggregation (removed stubs)
-- [x] Validate financial inputs
-- [x] Verify database relationships
-- [x] Transaction consistency (debt payments update balances)
-- [x] Data isolation (user ownership checks)
-- [x] Configure service timeouts (10 second timeouts)
-- [x] User-level authorization enforcement
-- [x] Monetary precision (BigDecimal, NUMERIC columns)
-- [x] Payment consistency
-
-#### Testing and Security
-- [x] Unit tests for budgets, debt payments, payoff calculations
-- [x] API integration tests for budgets, debts, authorization
-- [x] Test invalid inputs, missing resources
-- [x] Test cross-user data access (SecurityException)
-- [x] Test authentication enforcement
-- [x] Backend unit tests for financial calculations
-- [x] Payment validation and balance consistency tests
-
----
-
-## ❌ NOT IMPLEMENTED
-
-### Week 1 - Missing Features
-
-#### Backend Features
-- [x] **Category entity** - Implemented with JPA entity
-- [x] **Category table** - Created with foreign key to transactions
-- [x] **Category CRUD operations** - CategoryService and CategoryController
-- [x] **Category seeding** - Default categories seeded in migration
-- [ ] **Service-to-service auth enforcement** - No OAuth2/OIDC integration
-- [x] **Structured logging** - JSON logging with logback-logback-encoder
-- [x] **Request correlation** - Correlation ID filters across all services
-- [ ] **API documentation** - Springdoc added but not verified/accessible
-
-#### Database
-- [x] Category table with foreign key relationships
-- [ ] Dashboard snapshots table (optional, for reporting)
-- [x] Foreign key constraints for cross-service references
-- [ ] Database transaction tests for debt payments
-
-#### DevOps
-- [x] **GitHub Actions CI workflow** - Complete CI pipeline with all checks
-- [ ] **Backend integration tests** - Only Transaction Service has integration tests
-- [ ] **Cloud deployment** - No AWS/ECS configuration
-- [x] **Dockerfiles** - Dockerfiles for all services
-- [x] **Container images** - Docker Compose configuration with health checks
-
-#### Testing
-- [ ] Playwright end-to-end tests
-- [ ] E2E tests for main user journeys
-- [ ] Test service timeouts and downstream failures
-- [ ] Dependency vulnerability checks
-
-### Week 2 - Missing Features
-
-#### Backend Features
-- [x] **Budget spending calculations** - Implemented from actual transaction data
-- [ ] **Month-boundary filtering** - Partially implemented in calculations
-- [x] **Budget utilization from actual transactions** - Implemented via WebClient
-- [ ] **Debt payoff estimates** - Basic implementation only (no interest accrual)
-- [x] **Dashboard data aggregation** - Real aggregation from services (removed stubs)
-- [x] **Service timeout configuration** - 10 second timeouts configured
-- [x] **Advanced error handling** - Error handling in WebClient
-- [ ] **Circuit breakers** - Not implemented
-- [ ] **Retry logic** - Not implemented (basic error handling only)
-- [x] **Event-driven communication** - Kafka implemented for transactions and debt payments
-
-#### Security
-- [ ] **Rate limiting** - Not configured
-- [ ] **Request size limits** - Not configured
-- [ ] **IP allowlisting** - Not configured
-- [ ] **OWASP security headers** - Not configured
-- [ ] **SQL injection protection** - JPA provides basic protection
-
-#### Testing
-- [ ] Budget Service integration tests with Testcontainers
-- [ ] Debt Service integration tests with Testcontainers
-- [ ] Auth Service integration tests with Testcontainers
-- [ ] Dashboard Service integration tests
-- [ ] API Gateway integration tests
-- [ ] Monetary precision edge case tests
-- [ ] Date filtering edge case tests
-- [ ] Large dataset performance tests
-
-#### CI/CD & Cloud
-- [x] **GitHub Actions CI pipeline** - Complete implementation
-  - [x] Install frontend dependencies
-  - [x] Compile all Spring Boot services
-  - [x] Run frontend linting and type checks
-  - [x] Run backend unit and integration tests
-  - [x] Run frontend tests
-  - [x] Build frontend and backend services
-  - [x] Run dependency vulnerability checks (Trivy)
-  - [x] Build container images (in CD pipeline)
-- [x] **CD Pipeline** - Complete implementation
-  - [x] Deploy successful main-branch builds
-  - [x] Publish versioned container images to Docker Hub
-  - [ ] Apply backward-compatible database migrations
-  - [x] Run service health checks and smoke tests
-  - [x] Verify service connectivity
-  - [x] Report deployment status
-- [ ] **Production environment configuration**
-  - [ ] Environment variables and secrets
-  - [ ] Production CORS configuration
-  - [ ] Authentication rate limits
-  - [ ] Request rate limits
-- [ ] **Cloud hosting deployment**
-  - [ ] AWS ECS Fargate or alternative
-  - [ ] Amazon RDS for PostgreSQL
-  - [ ] HTTPS configuration
-  - [ ] SSL/TLS certificates
-- [ ] **Database backups**
-  - [ ] Automated backups
-  - [ ] Backup retention settings
-  - [ ] Restoration procedures
-- [ ] **Application logs and monitoring**
-  - [ ] CloudWatch or alternative
-  - [x] Structured logging (JSON format)
-  - [ ] Log aggregation
-  - [ ] Error tracking
-- [x] **Production health checks**
-  - [x] Configured health endpoints (Spring Boot Actuator)
-  - [x] Smoke tests (in CD pipeline)
-  - [ ] Uptime monitoring
-- [ ] **Documentation**
-  - [ ] Setup documentation
-  - [ ] Deployment documentation
-  - [ ] Rollback procedures
-  - [ ] Backup restoration procedures
-  - [ ] Troubleshooting guide
+### DevOps & CI/CD
+- Configure GitHub repository
+- Frontend linting and TypeScript checks
+- Java compilation setup
+- GitHub Actions CI workflow
+  - Install frontend dependencies
+  - Compile all Spring Boot services
+  - Run frontend linting and type checks
+  - Run backend unit and integration tests
+  - Run frontend tests
+  - Build frontend and backend services
+  - Run dependency vulnerability checks (Trivy)
+- CD Pipeline
+  - Deploy successful main-branch builds
+  - Publish versioned container images to Docker Hub
+  - Run service health checks and smoke tests
+  - Verify service connectivity
+  - Report deployment status
+- Dockerfiles for all services
+- Docker Compose configuration with health checks
+- Production health checks configured
+- Smoke tests in CD pipeline
 
 ---
 
 ## ⚠️ PARTIALLY IMPLEMENTED
 
 ### Authentication
-- [x] JWT implementation in Auth Service
-- [x] JWT validation in API Gateway
-- [x] User context propagation
-- [ ] OAuth 2.0 / OIDC external identity provider integration
-- [ ] Token refresh mechanism
-- [ ] Password reset functionality
+- JWT implementation in Auth Service (completed)
+- JWT validation in API Gateway (completed)
+- User context propagation (completed)
+- OAuth 2.0 / OIDC external identity provider integration (not implemented)
+- Token refresh mechanism (not implemented)
+- Password reset functionality (not implemented)
 
 ### Dashboard Service
-- [x] Service created with WebClient configuration
-- [x] Routes to other services
-- [x] Returns real aggregated data from transactions, budgets, and debts
-- [ ] Dashboard snapshots not implemented
-- [ ] Real-time updates not implemented
-
-### Budget Utilization
-- [x] Calculated in frontend
-- [x] Calculated from actual transaction data via WebClient
-- [x] Backend returns actual spent amounts with month filtering
+- Service created with WebClient configuration (completed)
+- Routes to other services (completed)
+- Returns real aggregated data from transactions, budgets, and debts (completed)
+- Dashboard snapshots (not implemented)
+- Real-time updates (not implemented)
 
 ### Debt Progress
-- [x] Calculated in service
-- [x] Integrated with payment history
-- [ ] Payoff timeline not calculated
-- [ ] Interest accrual not calculated
+- Calculated in service (completed)
+- Integrated with payment history (completed)
+- Payoff timeline (basic implementation only, no interest accrual)
+- Interest accrual (not implemented)
 
 ### Service Communication
-- [x] WebClient configured
-- [x] Basic REST calls implemented
-- [ ] No retry logic
-- [ ] No circuit breakers
-- [x] Timeout configuration (10 second timeouts)
-- [ ] No fallback mechanisms
+- WebClient configured (completed)
+- Basic REST calls implemented (completed)
+- Timeout configuration (10 second timeouts, completed)
+- Retry logic (not implemented)
+- Circuit breakers (not implemented)
+- Fallback mechanisms (not implemented)
+
+### CI/CD
+- CD Pipeline mostly complete but requires:
+  - Apply backward-compatible database migrations
+  - Production environment configuration
+  - Actual cloud deployment
+  - Monitoring setup
+
+---
+
+## TODO
+
+### Backend Features
+- Implement OAuth 2.0 / OIDC external identity provider integration
+- Add token refresh mechanism
+- Add password reset functionality
+- Implement advanced debt payoff estimates with interest accrual
+- Add retry logic for service communication
+- Add circuit breakers for service communication
+- Add fallback mechanisms for service communication
+- Implement dashboard snapshots (optional, for reporting)
+- Add database transaction tests for debt payments
+
+### Security
+- Configure rate limiting
+- Configure request size limits
+- Configure IP allowlisting
+- Configure OWASP security headers
+- Add SQL injection protection testing
+
+### Testing
+- Add Budget Service integration tests with Testcontainers
+- Add Debt Service integration tests with Testcontainers
+- Add Auth Service integration tests with Testcontainers
+- Add Dashboard Service integration tests
+- Add API Gateway integration tests
+- Add monetary precision edge case tests
+- Add date filtering edge case tests
+- Add large dataset performance tests
+- Add Playwright end-to-end tests
+- Add E2E tests for main user journeys
+- Test service timeouts and downstream failures
+- Test dependency vulnerability checks
+
+### CI/CD & Cloud
+- Apply backward-compatible database migrations in CD pipeline
+- Production environment configuration
+  - Environment variables and secrets
+  - Production CORS configuration
+  - Authentication rate limits
+  - Request rate limits
+- Cloud hosting deployment
+  - AWS ECS Fargate or alternative
+  - Amazon RDS for PostgreSQL
+  - HTTPS configuration
+  - SSL/TLS certificates
+- Database backups
+  - Automated backups
+  - Backup retention settings
+  - Restoration procedures
+- Application logs and monitoring
+  - CloudWatch or alternative
+  - Log aggregation
+  - Error tracking
+  - Uptime monitoring
+- Documentation
+  - Setup documentation
+  - Deployment documentation
+  - Rollback procedures
+  - Backup restoration procedures
+  - Troubleshooting guide
+- Configure and verify API documentation (Springdoc/OpenAPI)
+
+### Future Scope (Not Required for MVP)
+- Spending and debt charts (partially in frontend)
+- CSV export/import
+- Recurring transactions
+- Email payment reminders
+- Distributed tracing
+- Advanced observability
+- Chaos engineering
+- Bank integrations
+- Automated transaction imports
 
 ---
 
