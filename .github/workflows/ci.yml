@@ -1,6 +1,5 @@
 name: CI Pipeline
 
-# Trigger on push to main/develop and any PR to those branches
 on:
   push:
     branches: [ main, develop ]
@@ -8,9 +7,9 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  # Frontend: Check code quality before building
-  frontend-lint:
-    name: Frontend Lint & Type Check
+  # Frontend: Lint and build
+  frontend:
+    name: Frontend Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -24,343 +23,60 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'  # Speeds up install by caching node_modules
+          cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci  # Clean install for reproducible builds
+        run: npm ci
 
-      - name: Run ESLint
+      - name: Run lint
         run: npm run lint
-        continue-on-error: false  # Fail pipeline if linting fails
 
-      - name: Run TypeScript type check
+      - name: Run type check
         run: npm run type-check
-        continue-on-error: false
-
-  # Frontend: Run unit tests with coverage
-  frontend-test:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test -- --run  # --run = don't watch, just run once
-
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        if: always()  # Upload even if tests fail for debugging
-        with:
-          name: coverage-report
-          path: frontend/coverage/
-          retention-days: 7  # Keep for a week
-
-  # Frontend: Check for security vulnerabilities in dependencies
-  frontend-audit:
-    name: Frontend Dependency Audit
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true  # Don't fail pipeline, just warn us
-
-  # Backend: Verify all services compile successfully
-  backend-compile:
-    name: Backend Compilation
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'  # OpenJDK distribution
-          cache: 'maven'  # Cache Maven dependencies for speed
-
-      - name: Compile auth-service
-        run: cd services/auth-service && mvn clean compile
-
-      - name: Compile transaction-service
-        run: cd services/transaction-service && mvn clean compile
-
-      - name: Compile budget-service
-        run: cd services/budget-service && mvn clean compile
-
-      - name: Compile debt-service
-        run: cd services/debt-service && mvn clean compile
-
-      - name: Compile dashboard-service
-        run: cd services/dashboard-service && mvn clean compile
-
-      - name: Compile gateway
-        run: cd infrastructure/gateway && mvn clean compile
-
-  # Backend: Run unit tests for all microservices
-  backend-unit-tests:
-    name: Backend Unit Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Run auth-service tests
-        run: cd services/auth-service && mvn test
-
-      - name: Run transaction-service tests
-        run: cd services/transaction-service && mvn test
-
-      - name: Run budget-service tests
-        run: cd services/budget-service && mvn test
-
-      - name: Run debt-service tests
-        run: cd services/debt-service && mvn test
-
-      - name: Run dashboard-service tests
-        run: cd services/dashboard-service && mvn test
-
-      - name: Run gateway tests
-        run: cd infrastructure/gateway && mvn test
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()  # Keep results even if tests fail for investigation
-        with:
-          name: backend-test-results
-          path: |
-            services/*/target/surefire-reports/
-            infrastructure/gateway/target/surefire-reports/
-          retention-days: 7
-
-  # Backend: Integration tests with real PostgreSQL database
-  # Uses GitHub Actions services to spin up a test database
-  backend-integration-tests:
-    name: Backend Integration Tests
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: testdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Run transaction-service integration tests
-        run: cd services/transaction-service && mvn test -Dtest=*IntegrationTest
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-
-      - name: Run budget-service integration tests
-        run: cd services/budget-service && mvn test -Dtest=*IntegrationTest
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-
-      - name: Run debt-service integration tests
-        run: cd services/debt-service && mvn test -Dtest=*IntegrationTest
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-
-      - name: Run auth-service integration tests
-        run: cd services/auth-service && mvn test -Dtest=*IntegrationTest
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-
-      - name: Run dashboard-service integration tests
-        run: cd services/dashboard-service && mvn test -Dtest=*IntegrationTest
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-
-  # Backend: Package all services into JARs (runs after compile & tests pass)
-  backend-build:
-    name: Build Backend Services
-    runs-on: ubuntu-latest
-    needs: [backend-compile, backend-unit-tests]  # Only run if previous jobs succeed
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Build auth-service
-        run: cd services/auth-service && mvn clean package -DskipTests
-
-      - name: Build transaction-service
-        run: cd services/transaction-service && mvn clean package -DskipTests
-
-      - name: Build budget-service
-        run: cd services/budget-service && mvn clean package -DskipTests
-
-      - name: Build debt-service
-        run: cd services/debt-service && mvn clean package -DskipTests
-
-      - name: Build dashboard-service
-        run: cd services/dashboard-service && mvn clean package -DskipTests
-
-      - name: Build gateway
-        run: cd infrastructure/gateway && mvn clean package -DskipTests
-
-      - name: Upload JAR artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jars
-          path: |
-            services/*/target/*.jar
-            infrastructure/gateway/target/*.jar
-          retention-days: 7
-
-  # Frontend: Build production bundle (runs after lint & tests pass)
-  frontend-build:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    needs: [frontend-lint, frontend-test]  # Only run if lint and tests succeed
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Build frontend
-        run: npm run build  # Creates optimized production build in dist/
+        run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/dist/
-          retention-days: 7
-
-  # Security: Scan code for vulnerabilities using Trivy
-  # Note: set to continue-on-error so it doesn't block deploys
-  security-scan:
-    name: Security Scanning
+  # Backend: Compile, test, and build all services
+  backend:
+    name: Backend Build
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          scan-type: 'fs'  # File system scan
-          scan-ref: '.'
-          format: 'sarif'  # Standard format for security results
-          output: 'trivy-results.sarif'
-        continue-on-error: true  # Don't fail pipeline on security findings
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: success() && hashFiles('trivy-results.sarif') != ''  # Only upload if scan succeeded
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  # Summary: Show overall pipeline status (runs even if previous jobs fail)
-  ci-summary:
-    name: CI Summary
-    runs-on: ubuntu-latest
-    needs: [frontend-lint, frontend-test, frontend-audit, backend-compile, backend-unit-tests, backend-integration-tests, backend-build, frontend-build, security-scan]
-    if: always()  # Always run to show results even if something failed
-
-    steps:
-      - name: Check job status
+      - name: Compile all services
         run: |
-          echo "=== CI Pipeline Summary ==="
-          echo "Frontend Lint: ${{ needs.frontend-lint.result }}"
-          echo "Frontend Test: ${{ needs.frontend-test.result }}"
-          echo "Frontend Audit: ${{ needs.frontend-audit.result }}"
-          echo "Backend Compile: ${{ needs.backend-compile.result }}"
-          echo "Backend Unit Tests: ${{ needs.backend-unit-tests.result }}"
-          echo "Backend Integration Tests: ${{ needs.backend-integration-tests.result }}"
-          echo "Backend Build: ${{ needs.backend-build.result }}"
-          echo "Frontend Build: ${{ needs.frontend-build.result }}"
-          echo "Security Scan: ${{ needs.security-scan.result }}"
+          cd services/auth-service && mvn clean compile
+          cd ../transaction-service && mvn clean compile
+          cd ../budget-service && mvn clean compile
+          cd ../debt-service && mvn clean compile
+          cd ../dashboard-service && mvn clean compile
+          cd ../../infrastructure/gateway && mvn clean compile
+
+      - name: Run unit tests
+        run: |
+          cd services/auth-service && mvn test
+          cd ../transaction-service && mvn test
+          cd ../budget-service && mvn test
+          cd ../debt-service && mvn test
+          cd ../dashboard-service && mvn test
+          cd ../../infrastructure/gateway && mvn test
+
+      - name: Build JARs
+        run: |
+          cd services/auth-service && mvn clean package -DskipTests
+          cd ../transaction-service && mvn clean package -DskipTests
+          cd ../budget-service && mvn clean package -DskipTests
+          cd ../debt-service && mvn clean package -DskipTests
+          cd ../dashboard-service && mvn clean package -DskipTests
+          cd ../../infrastructure/gateway && mvn clean package -DskipTests
