@@ -1,6 +1,8 @@
 package com.finance.budget.service;
 
+import com.finance.budget.client.TransactionClient;
 import com.finance.budget.dto.BudgetRequest;
+import com.finance.budget.dto.TransactionSummaryResponse;
 import com.finance.budget.filter.UserContextFilter;
 import com.finance.budget.model.Budget;
 import com.finance.budget.repository.BudgetRepository;
@@ -8,18 +10,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class BudgetService {
 
     private final BudgetRepository budgetRepository;
+    private final TransactionClient transactionClient;
 
-    public BudgetService(BudgetRepository budgetRepository) {
+    public BudgetService(BudgetRepository budgetRepository, TransactionClient transactionClient) {
         this.budgetRepository = budgetRepository;
+        this.transactionClient = transactionClient;
     }
 
     private UUID getCurrentUserId() {
@@ -106,9 +113,27 @@ public class BudgetService {
     }
 
     public BigDecimal calculateSpent(UUID userId, String category, Integer month, Integer year) {
-        // This would call Transaction Service in a real implementation
-        // For now, return 0
-        return BigDecimal.ZERO;
+        try {
+            List<TransactionSummaryResponse> transactions = transactionClient.getAllTransactions(userId);
+
+            YearMonth budgetMonth = YearMonth.of(year, month);
+            LocalDate startDate = budgetMonth.atDay(1);
+            LocalDate endDate = budgetMonth.atEndOfMonth();
+
+            return transactions.stream()
+                    .filter(t -> t.getType().equalsIgnoreCase("EXPENSE"))
+                    .filter(t -> t.getCategory().equalsIgnoreCase(category))
+                    .filter(t -> {
+                        LocalDate transactionDate = LocalDate.parse(t.getDate());
+                        return !transactionDate.isBefore(startDate) && !transactionDate.isAfter(endDate);
+                    })
+                    .map(TransactionSummaryResponse::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        } catch (Exception e) {
+            // Log error and return 0 if transaction service is unavailable
+            System.err.println("Error fetching transactions: " + e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
 
     public BigDecimal calculateRemaining(UUID budgetId) {

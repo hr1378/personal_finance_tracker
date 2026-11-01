@@ -24,8 +24,20 @@ public class Transaction {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @Column(nullable = false)
-    private String category;
+    private String categoryName;
+
+    @PrePersist
+    @PreUpdate
+    private void syncCategoryName() {
+        if (category != null) {
+            this.categoryName = category.getName();
+        }
+    }
 
     @Column(nullable = false)
     private LocalDate date;
@@ -40,12 +52,23 @@ public class Transaction {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Transaction(UUID userId, TransactionType type, BigDecimal amount, String category, LocalDate date, String description) {
+    public Transaction(UUID userId, TransactionType type, BigDecimal amount, String categoryName, LocalDate date, String description) {
+        this();
+        this.userId = userId;
+        this.type = type;
+        this.amount = amount;
+        this.categoryName = categoryName;
+        this.date = date;
+        this.description = description;
+    }
+
+    public Transaction(UUID userId, TransactionType type, BigDecimal amount, Category category, LocalDate date, String description) {
         this();
         this.userId = userId;
         this.type = type;
         this.amount = amount;
         this.category = category;
+        this.categoryName = category != null ? category.getName() : null;
         this.date = date;
         this.description = description;
     }
@@ -82,12 +105,21 @@ public class Transaction {
         this.amount = amount;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
+        this.categoryName = category != null ? category.getName() : null;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public LocalDate getDate() {

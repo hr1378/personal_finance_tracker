@@ -3,8 +3,10 @@ package com.finance.transaction.service;
 import com.finance.transaction.dto.TransactionRequest;
 import com.finance.transaction.dto.TransactionSummary;
 import com.finance.transaction.filter.UserContextFilter;
+import com.finance.transaction.model.Category;
 import com.finance.transaction.model.Transaction;
 import com.finance.transaction.model.TransactionType;
+import com.finance.transaction.repository.CategoryRepository;
 import com.finance.transaction.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +21,11 @@ import java.util.UUID;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
+    private final CategoryRepository categoryRepository;
 
-    public TransactionService(TransactionRepository transactionRepository) {
+    public TransactionService(TransactionRepository transactionRepository, CategoryRepository categoryRepository) {
         this.transactionRepository = transactionRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     private UUID getCurrentUserId() {
@@ -44,12 +48,23 @@ public class TransactionService {
     public Transaction createTransaction(TransactionRequest request) {
         UUID currentUserId = getCurrentUserId();
 
+        // Find or create category
+        Category category = categoryRepository.findByName(request.getCategory())
+                .orElseGet(() -> {
+                    Category newCategory = new Category(
+                            request.getCategory(),
+                            request.getType(),
+                            "Auto-created from transaction"
+                    );
+                    return categoryRepository.save(newCategory);
+                });
+
         // Override the user ID from request with authenticated user ID
         Transaction transaction = new Transaction(
                 currentUserId,
                 request.getType(),
                 request.getAmount(),
-                request.getCategory(),
+                category,
                 request.getDate(),
                 request.getDescription()
         );

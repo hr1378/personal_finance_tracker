@@ -1,0 +1,16 @@
+INSERT INTO categories (id, name, type, description, created_at) VALUES
+('550e8400-e29b-41d4-a716-446655440001', 'Salary', 'INCOME', 'Salary and wages', NOW()),
+('550e8400-e29b-41d4-a716-446655440002', 'Freelance', 'INCOME', 'Freelance income', NOW()),
+('550e8400-e29b-41d4-a716-446655440003', 'Investments', 'INCOME', 'Investment returns', NOW()),
+('550e8400-e29b-41d4-a716-446655440004', 'Gifts', 'INCOME', 'Gifts and bonuses', NOW()),
+('550e8400-e29b-41d4-a716-446655440005', 'Food & Dining', 'EXPENSE', 'Groceries and restaurants', NOW()),
+('550e8400-e29b-41d4-a716-446655440006', 'Transportation', 'EXPENSE', 'Car, gas, public transit', NOW()),
+('550e8400-e29b-41d4-a716-446655440007', 'Housing', 'EXPENSE', 'Rent, mortgage, utilities', NOW()),
+('550e8400-e29b-41d4-a716-446655440008', 'Entertainment', 'EXPENSE', 'Movies, games, hobbies', NOW()),
+('550e8400-e29b-41d4-a716-446655440009', 'Shopping', 'EXPENSE', 'Clothing, electronics, etc.', NOW()),
+('550e8400-e29b-41d4-a716-446655440010', 'Healthcare', 'EXPENSE', 'Medical expenses, insurance', NOW()),
+('550e8400-e29b-41d4-a716-446655440011', 'Education', 'EXPENSE', 'Tuition, books, courses', NOW()),
+('550e8400-e29b-41d4-a716-446655440012', 'Utilities', 'EXPENSE', 'Electricity, water, internet', NOW()),
+('550e8400-e29b-41d4-a716-446655440013', 'Debt Payments', 'EXPENSE', 'Loan and credit card payments', NOW()),
+('550e8400-e29b-41d4-a716-446655440014', 'Savings', 'EXPENSE', 'Savings and investments', NOW()),
+('550e8400-e29b-41d4-a716-446655440015', 'Other', 'EXPENSE', 'Miscellaneous expenses', NOW());

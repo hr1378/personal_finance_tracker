@@ -1,12 +1,15 @@
 package com.finance.dashboard.service;
 
+import com.finance.dashboard.dto.BudgetSummary;
 import com.finance.dashboard.dto.DashboardSummary;
+import com.finance.dashboard.dto.DebtSummary;
 import com.finance.dashboard.filter.UserContextFilter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -67,10 +70,10 @@ public class DashboardService {
         return debtWebClient.get()
                 .uri("/api/debts/user/{userId}", userId)
                 .retrieve()
-                .bodyToFlux(Object.class)
+                .bodyToFlux(DebtSummary.class)
                 .collectList()
                 .map(debts -> debts.stream()
-                        .map(d -> BigDecimal.valueOf(0)) // Would parse actual debt balances
+                        .map(DebtSummary::getCurrentBalance)
                         .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
@@ -78,9 +81,23 @@ public class DashboardService {
         return budgetWebClient.get()
                 .uri("/api/budgets/user/{userId}", userId)
                 .retrieve()
-                .bodyToFlux(Object.class)
+                .bodyToFlux(BudgetSummary.class)
                 .collectList()
-                .map(budgets -> BigDecimal.valueOf(0)); // Would calculate actual utilization
+                .map(budgets -> {
+                    if (budgets.isEmpty()) {
+                        return BigDecimal.ZERO;
+                    }
+                    BigDecimal totalSpent = budgets.stream()
+                            .map(BudgetSummary::getSpent)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal totalLimit = budgets.stream()
+                            .map(BudgetSummary::getSpendingLimit)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    if (totalLimit.compareTo(BigDecimal.ZERO) == 0) {
+                        return BigDecimal.ZERO;
+                    }
+                    return totalSpent.divide(totalLimit, 2, java.math.RoundingMode.HALF_UP);
+                });
     }
 
     private static class TransactionSummary {

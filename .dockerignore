@@ -1,0 +1,13 @@
+.git
+.gitignore
+.github
+README.md
+checklist.md
+AGENTS.md
+.DS_Store
+*.log
+.vscode
+.idea
+node_modules
+dist
+coverage

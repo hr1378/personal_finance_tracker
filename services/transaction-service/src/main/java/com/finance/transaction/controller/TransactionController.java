@@ -1,6 +1,7 @@
 package com.finance.transaction.controller;
 
 import com.finance.transaction.dto.TransactionRequest;
+import com.finance.transaction.dto.TransactionResponse;
 import com.finance.transaction.dto.TransactionSummary;
 import com.finance.transaction.model.Transaction;
 import com.finance.transaction.model.TransactionType;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -22,8 +24,21 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+    private TransactionResponse toResponse(Transaction transaction) {
+        return new TransactionResponse(
+                transaction.getId(),
+                transaction.getUserId(),
+                transaction.getType().name(),
+                transaction.getAmount(),
+                transaction.getCategoryName(),
+                transaction.getDate(),
+                transaction.getDescription(),
+                transaction.getCreatedAt()
+        );
+    }
+
     @PostMapping
-    public ResponseEntity<Transaction> createTransaction(@RequestBody TransactionRequest request) {
+    public ResponseEntity<TransactionResponse> createTransaction(@RequestBody TransactionRequest request) {
         if (request.getAmount() == null || request.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
             return ResponseEntity.badRequest().build();
         }
@@ -31,31 +46,36 @@ public class TransactionController {
             return ResponseEntity.badRequest().build();
         }
         Transaction transaction = transactionService.createTransaction(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(transaction));
     }
 
     @GetMapping
-    public ResponseEntity<List<Transaction>> getTransactions(
+    public ResponseEntity<List<TransactionResponse>> getTransactions(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) TransactionType type) {
+        List<Transaction> transactions;
         if (userId == null) {
             if (type == null) {
-                return ResponseEntity.ok(transactionService.getAllTransactions());
+                transactions = transactionService.getAllTransactions();
+            } else {
+                transactions = transactionService.getTransactionsByType(type);
             }
-            return ResponseEntity.ok(transactionService.getTransactionsByType(type));
+        } else {
+            if (type == null) {
+                transactions = transactionService.getTransactionsByUser(userId);
+            } else {
+                transactions = transactionService.getTransactionsByUser(userId).stream()
+                        .filter(t -> t.getType() == type)
+                        .collect(Collectors.toList());
+            }
         }
-        if (type == null) {
-            return ResponseEntity.ok(transactionService.getTransactionsByUser(userId));
-        }
-        return ResponseEntity.ok(transactionService.getTransactionsByUser(userId).stream()
-                .filter(t -> t.getType() == type)
-                .toList());
+        return ResponseEntity.ok(transactions.stream().map(this::toResponse).collect(Collectors.toList()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Transaction> getTransactionById(@PathVariable UUID id) {
+    public ResponseEntity<TransactionResponse> getTransactionById(@PathVariable UUID id) {
         try {
-            return ResponseEntity.ok(transactionService.getTransactionById(id));
+            return ResponseEntity.ok(toResponse(transactionService.getTransactionById(id)));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
