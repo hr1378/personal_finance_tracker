@@ -2,6 +2,8 @@ package com.finance.transaction.service;
 
 import com.finance.transaction.dto.TransactionRequest;
 import com.finance.transaction.dto.TransactionSummary;
+import com.finance.transaction.event.TransactionEvent;
+import com.finance.transaction.event.TransactionEventProducer;
 import com.finance.transaction.filter.UserContextFilter;
 import com.finance.transaction.model.Category;
 import com.finance.transaction.model.Transaction;
@@ -22,10 +24,14 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
+    private final TransactionEventProducer eventProducer;
 
-    public TransactionService(TransactionRepository transactionRepository, CategoryRepository categoryRepository) {
+    public TransactionService(TransactionRepository transactionRepository,
+                             CategoryRepository categoryRepository,
+                             TransactionEventProducer eventProducer) {
         this.transactionRepository = transactionRepository;
         this.categoryRepository = categoryRepository;
+        this.eventProducer = eventProducer;
     }
 
     private UUID getCurrentUserId() {
@@ -68,7 +74,22 @@ public class TransactionService {
                 request.getDate(),
                 request.getDescription()
         );
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        // Publish event
+        TransactionEvent event = new TransactionEvent(
+                savedTransaction.getId(),
+                savedTransaction.getUserId(),
+                savedTransaction.getType().name(),
+                savedTransaction.getAmount(),
+                savedTransaction.getCategoryName(),
+                savedTransaction.getDate(),
+                savedTransaction.getDescription(),
+                "CREATED"
+        );
+        eventProducer.publishTransactionEvent(event);
+
+        return savedTransaction;
     }
 
     public List<Transaction> getAllTransactions() {

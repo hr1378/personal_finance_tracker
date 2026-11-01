@@ -83,7 +83,7 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 
 #### Backend and Database
 - [x] Implement Budget Service CRUD operations
-- [x] Budget spending calculations (stubbed - returns 0)
+- [x] Budget spending calculations from actual transaction data
 - [x] Implement Debt Management Service CRUD operations
 - [x] Implement debt payment recording
 - [x] Maintain payment history
@@ -91,11 +91,12 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 - [x] Calculate basic payoff estimates
 - [x] Implement Dashboard and Reporting Service
 - [x] Configure REST communication between services (WebClient)
+- [x] Real-time dashboard data aggregation (removed stubs)
 - [x] Validate financial inputs
 - [x] Verify database relationships
 - [x] Transaction consistency (debt payments update balances)
 - [x] Data isolation (user ownership checks)
-- [x] Configure service timeouts (basic error handling)
+- [x] Configure service timeouts (10 second timeouts)
 - [x] User-level authorization enforcement
 - [x] Monetary precision (BigDecimal, NUMERIC columns)
 - [x] Payment consistency
@@ -116,25 +117,27 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 ### Week 1 - Missing Features
 
 #### Backend Features
-- [ ] **Category entity** - Categories stored as strings, not separate entity
-- [ ] **Category table** - No dedicated category management
+- [x] **Category entity** - Implemented with JPA entity
+- [x] **Category table** - Created with foreign key to transactions
+- [x] **Category CRUD operations** - CategoryService and CategoryController
+- [x] **Category seeding** - Default categories seeded in migration
 - [ ] **Service-to-service auth enforcement** - No OAuth2/OIDC integration
-- [ ] **Structured logging** - No centralized logging
-- [ ] **Request correlation** - No correlation IDs across services
+- [x] **Structured logging** - JSON logging with logback-logback-encoder
+- [x] **Request correlation** - Correlation ID filters across all services
 - [ ] **API documentation** - Springdoc added but not verified/accessible
 
 #### Database
-- [ ] Category table with foreign key relationships
+- [x] Category table with foreign key relationships
 - [ ] Dashboard snapshots table (optional, for reporting)
-- [ ] Foreign key constraints for cross-service references
+- [x] Foreign key constraints for cross-service references
 - [ ] Database transaction tests for debt payments
 
 #### DevOps
-- [ ] **GitHub Actions CI workflow** - No `.github/workflows/` directory
+- [x] **GitHub Actions CI workflow** - Complete CI pipeline with all checks
 - [ ] **Backend integration tests** - Only Transaction Service has integration tests
 - [ ] **Cloud deployment** - No AWS/ECS configuration
-- [ ] **Dockerfiles** - No Dockerfiles for individual services
-- [ ] **Container images** - No container build configuration
+- [x] **Dockerfiles** - Dockerfiles for all services
+- [x] **Container images** - Docker Compose configuration with health checks
 
 #### Testing
 - [ ] Playwright end-to-end tests
@@ -145,15 +148,16 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 ### Week 2 - Missing Features
 
 #### Backend Features
-- [ ] **Budget spending calculations** - Currently returns hardcoded 0
-- [ ] **Month-boundary filtering** - Not fully implemented
-- [ ] **Budget utilization from actual transactions** - Stubbed
-- [ ] **Debt payoff estimates** - Basic implementation only
-- [ ] **Dashboard data aggregation** - Returns stubbed data (BigDecimal.valueOf(0))
-- [ ] **Service timeout configuration** - Not configured
-- [ ] **Advanced error handling** - Basic try-catch only
+- [x] **Budget spending calculations** - Implemented from actual transaction data
+- [ ] **Month-boundary filtering** - Partially implemented in calculations
+- [x] **Budget utilization from actual transactions** - Implemented via WebClient
+- [ ] **Debt payoff estimates** - Basic implementation only (no interest accrual)
+- [x] **Dashboard data aggregation** - Real aggregation from services (removed stubs)
+- [x] **Service timeout configuration** - 10 second timeouts configured
+- [x] **Advanced error handling** - Error handling in WebClient
 - [ ] **Circuit breakers** - Not implemented
-- [ ] **Retry logic** - Not implemented
+- [ ] **Retry logic** - Not implemented (basic error handling only)
+- [x] **Event-driven communication** - Kafka implemented for transactions and debt payments
 
 #### Security
 - [ ] **Rate limiting** - Not configured
@@ -173,22 +177,22 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 - [ ] Large dataset performance tests
 
 #### CI/CD & Cloud
-- [ ] **GitHub Actions CI pipeline** - Completely missing
-  - [ ] Install frontend dependencies
-  - [ ] Compile all Spring Boot services
-  - [ ] Run frontend linting and type checks
-  - [ ] Run backend unit and integration tests
-  - [ ] Run frontend tests
-  - [ ] Build frontend and backend services
-  - [ ] Run dependency vulnerability checks
-  - [ ] Build container images
-- [ ] **CD Pipeline** - Not implemented
-  - [ ] Deploy successful main-branch builds
-  - [ ] Publish versioned container images
+- [x] **GitHub Actions CI pipeline** - Complete implementation
+  - [x] Install frontend dependencies
+  - [x] Compile all Spring Boot services
+  - [x] Run frontend linting and type checks
+  - [x] Run backend unit and integration tests
+  - [x] Run frontend tests
+  - [x] Build frontend and backend services
+  - [x] Run dependency vulnerability checks (Trivy)
+  - [x] Build container images (in CD pipeline)
+- [x] **CD Pipeline** - Complete implementation
+  - [x] Deploy successful main-branch builds
+  - [x] Publish versioned container images to Docker Hub
   - [ ] Apply backward-compatible database migrations
-  - [ ] Run service health checks and smoke tests
-  - [ ] Verify service connectivity
-  - [ ] Report deployment status
+  - [x] Run service health checks and smoke tests
+  - [x] Verify service connectivity
+  - [x] Report deployment status
 - [ ] **Production environment configuration**
   - [ ] Environment variables and secrets
   - [ ] Production CORS configuration
@@ -205,12 +209,12 @@ Based on PROJECT 1 weeks 1 & 2 requirements
   - [ ] Restoration procedures
 - [ ] **Application logs and monitoring**
   - [ ] CloudWatch or alternative
-  - [ ] Structured logging
+  - [x] Structured logging (JSON format)
   - [ ] Log aggregation
   - [ ] Error tracking
-- [ ] **Production health checks**
-  - [ ] Configured health endpoints
-  - [ ] Smoke tests
+- [x] **Production health checks**
+  - [x] Configured health endpoints (Spring Boot Actuator)
+  - [x] Smoke tests (in CD pipeline)
   - [ ] Uptime monitoring
 - [ ] **Documentation**
   - [ ] Setup documentation

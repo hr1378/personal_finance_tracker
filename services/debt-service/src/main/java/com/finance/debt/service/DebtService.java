@@ -2,6 +2,8 @@ package com.finance.debt.service;
 
 import com.finance.debt.dto.DebtPaymentRequest;
 import com.finance.debt.dto.DebtRequest;
+import com.finance.debt.event.DebtPaymentEvent;
+import com.finance.debt.event.DebtPaymentEventProducer;
 import com.finance.debt.filter.UserContextFilter;
 import com.finance.debt.model.Debt;
 import com.finance.debt.model.DebtPayment;
@@ -21,10 +23,14 @@ public class DebtService {
 
     private final DebtRepository debtRepository;
     private final DebtPaymentRepository debtPaymentRepository;
+    private final DebtPaymentEventProducer eventProducer;
 
-    public DebtService(DebtRepository debtRepository, DebtPaymentRepository debtPaymentRepository) {
+    public DebtService(DebtRepository debtRepository,
+                       DebtPaymentRepository debtPaymentRepository,
+                       DebtPaymentEventProducer eventProducer) {
         this.debtRepository = debtRepository;
         this.debtPaymentRepository = debtPaymentRepository;
+        this.eventProducer = eventProducer;
     }
 
     private UUID getCurrentUserId() {
@@ -120,6 +126,18 @@ public class DebtService {
         debt.setCurrentBalance(debt.getCurrentBalance().subtract(request.getAmount()));
         debt.setUpdatedAt(LocalDateTime.now());
         debtRepository.save(debt);
+
+        // Publish event
+        DebtPaymentEvent event = new DebtPaymentEvent(
+                savedPayment.getId(),
+                savedPayment.getUserId(),
+                savedPayment.getDebtId(),
+                savedPayment.getAmount(),
+                savedPayment.getPaymentDate(),
+                savedPayment.getNote(),
+                "CREATED"
+        );
+        eventProducer.publishDebtPaymentEvent(event);
 
         return savedPayment;
     }
