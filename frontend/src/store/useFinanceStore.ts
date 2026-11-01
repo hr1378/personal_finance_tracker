@@ -38,7 +38,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
     try {
       const data = await api.getTransactions(userId, type)
       set({ transactions: data, isLoading: false })
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch transactions', isLoading: false })
     }
   },
@@ -48,7 +48,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
     try {
       const data = await api.getSummary(userId)
       set({ summary: data, isLoading: false })
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch summary', isLoading: false })
     }
   },
@@ -63,7 +63,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
       }))
       // Refresh summary after adding transaction
       await useFinanceStore.getState().fetchSummary()
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to add transaction', isLoading: false })
     }
   },
@@ -78,7 +78,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
       }))
       // Refresh summary after deleting transaction
       await useFinanceStore.getState().fetchSummary()
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to delete transaction', isLoading: false })
     }
   },
@@ -88,7 +88,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
     try {
       const data = await api.getBudgets(userId, month, year)
       set({ budgets: data, isLoading: false })
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch budgets', isLoading: false })
     }
   },
@@ -101,7 +101,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
         budgets: [...state.budgets, newBudget],
         isLoading: false
       }))
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to add budget', isLoading: false })
     }
   },
@@ -114,7 +114,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
         budgets: state.budgets.map(b => b.id === id ? updatedBudget : b),
         isLoading: false
       }))
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to update budget', isLoading: false })
     }
   },
@@ -127,7 +127,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
         budgets: state.budgets.filter(b => b.id !== id),
         isLoading: false
       }))
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to delete budget', isLoading: false })
     }
   },
@@ -137,7 +137,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
     try {
       const data = await api.getDebts(userId)
       set({ debts: data, isLoading: false })
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch debts', isLoading: false })
     }
   },
@@ -150,7 +150,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
         debts: [...state.debts, newDebt],
         isLoading: false
       }))
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to add debt', isLoading: false })
     }
   },
@@ -163,7 +163,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
         debts: state.debts.map(d => d.id === id ? updatedDebt : d),
         isLoading: false
       }))
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to update debt', isLoading: false })
     }
   },
@@ -176,7 +176,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
         debts: state.debts.filter(d => d.id !== id),
         isLoading: false
       }))
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to delete debt', isLoading: false })
     }
   }

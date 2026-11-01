@@ -58,7 +58,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<Object
                         .parseSignedClaims(token)
                         .getPayload();
 
-                String userId = claims.getSubject();
+                String userId = claims.get("userId", String.class);
 
                 // Add user ID to request headers for downstream services
                 exchange.getRequest().mutate()

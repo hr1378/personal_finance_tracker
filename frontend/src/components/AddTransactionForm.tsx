@@ -2,10 +2,18 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Card } from './ui/Card'
 
+interface TransactionFormData {
+  type: 'INCOME' | 'EXPENSE'
+  amount: number
+  category: string
+  date: string
+  description?: string
+}
+
 interface AddTransactionFormProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: any) => void
+  onSubmit: (data: TransactionFormData) => void
   isSubmitting: boolean
 }
 

@@ -10,7 +10,6 @@ import { PageHeader } from './components/layout/PageHeader'
 import { toast } from 'sonner'
 import { useFinanceStore } from './store/useFinanceStore'
 import type { View } from './types'
-import type { Budget, Debt } from './types/finance'
 
 function App() {
   const {
@@ -51,7 +50,7 @@ function App() {
 
   const filteredTransactions = getFilteredTransactions()
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: { type: string; amount: number; category: string; date: string; description?: string }) => {
     if (!data.amount || !data.category || !data.date) {
       toast.error('Please fill in all required fields')
       return
@@ -69,7 +68,7 @@ function App() {
       })
       toast.success('Transaction added successfully')
       setShowAddForm(false)
-    } catch (error) {
+    } catch {
       toast.error('Failed to add transaction')
     } finally {
       setIsSubmitting(false)
@@ -84,7 +83,7 @@ function App() {
     try {
       await deleteTransaction(id)
       toast.success('Transaction deleted successfully')
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete transaction')
     }
   }

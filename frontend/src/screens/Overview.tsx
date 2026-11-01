@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, ArrowUpRight, ArrowDownRight, Wallet, Calendar } from 'lucide-react'
+import { TrendingUp, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Card } from '../components/ui/Card'
 import { StatCard } from '../components/ui/StatCard'
@@ -43,20 +43,6 @@ interface OverviewProps {
   summary: Summary
   budgets?: Budget[]
   debts?: Debt[]
-}
-
-const COLORS = ['#34c759', '#ff3b30', '#007aff', '#ff9500', '#af52de']
-
-const COLORS_STYLES = {
-  income: '#34c759',
-  expense: '#ff3b30',
-  success: '#34c759',
-  danger: '#ff3b30',
-  warning: '#ff9500',
-  successLight: '#e8f9ee',
-  dangerLight: '#ffe5e5',
-  warningLight: '#fff4e6',
-  infoLight: '#e6f2ff',
 }
 
 export function Overview({ transactions, summary, budgets = [], debts = [] }: OverviewProps) {

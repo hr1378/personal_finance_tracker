@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns'
+import { format } from 'date-fns'
 import { Wallet, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { formatCurrency } from '../lib/utils'

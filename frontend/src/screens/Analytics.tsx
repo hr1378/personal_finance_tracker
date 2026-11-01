@@ -1,6 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { format, parseISO } from 'date-fns'
-import { TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { formatCurrency } from '../lib/utils'
 
@@ -61,10 +60,6 @@ export function Analytics({ transactions }: AnalyticsProps) {
   }, {} as Record<string, { income: number; expenses: number }>)
 
   const sortedMonths = Object.keys(monthlyData).sort().slice(-6)
-  const maxMonthlyAmount = Math.max(
-    ...sortedMonths.map(m => Math.max(monthlyData[m].income, monthlyData[m].expenses)),
-    1
-  )
 
   const chartData = sortedMonths.map(month => ({
     month: formatMonth(month),

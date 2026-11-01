@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User, AuthState } from '../types'
+import { createContext, useContext, useState, ReactNode } from 'react'
+import { AuthState } from '../types'
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>
@@ -10,23 +10,30 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    token: localStorage.getItem('token'),
-    isAuthenticated: !!localStorage.getItem('token')
-  })
-
-  useEffect(() => {
+  const [authState, setAuthState] = useState<AuthState>(() => {
     const token = localStorage.getItem('token')
     const userStr = localStorage.getItem('user')
     if (token && userStr) {
-      setAuthState({
-        token,
-        user: JSON.parse(userStr),
-        isAuthenticated: true
-      })
+      try {
+        return {
+          token,
+          user: JSON.parse(userStr),
+          isAuthenticated: true
+        }
+      } catch {
+        return {
+          user: null,
+          token: null,
+          isAuthenticated: false
+        }
+      }
     }
-  }, [])
+    return {
+      user: null,
+      token: null,
+      isAuthenticated: false
+    }
+  })
 
   const login = async (email: string, password: string) => {
     // Call auth service

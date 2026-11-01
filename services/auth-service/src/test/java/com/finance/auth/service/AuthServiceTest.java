@@ -21,6 +21,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
@@ -63,7 +67,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(jwtUtil.generateToken(any(UUID.class))).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(anyString(), any(UUID.class))).thenReturn("jwt-token");
 
         AuthResponse response = authService.register(registerRequest);
 
@@ -76,7 +80,7 @@ class AuthServiceTest {
         verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
         verify(userRepository).save(any(User.class));
-        verify(jwtUtil).generateToken(testUser.getId());
+        verify(jwtUtil).generateToken(testUser.getEmail(), testUser.getId());
     }
 
     @Test
@@ -93,7 +97,7 @@ class AuthServiceTest {
     void login_ShouldReturnToken_WhenCredentialsValid() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(jwtUtil.generateToken(any(UUID.class))).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(anyString(), any(UUID.class))).thenReturn("jwt-token");
 
         AuthResponse response = authService.login(loginRequest);
 
@@ -103,7 +107,7 @@ class AuthServiceTest {
 
         verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).matches("password123", "encodedPassword");
-        verify(jwtUtil).generateToken(testUser.getId());
+        verify(jwtUtil).generateToken(testUser.getEmail(), testUser.getId());
     }
 
     @Test
