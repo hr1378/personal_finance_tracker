@@ -15,6 +15,8 @@ WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar
 
+RUN apk add --no-cache curl
+
 EXPOSE 8085
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

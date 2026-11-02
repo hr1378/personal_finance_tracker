@@ -100,7 +100,7 @@ public class DashboardService {
                 });
     }
 
-    private static class TransactionSummary {
+    public static class TransactionSummary {
         private BigDecimal totalIncome;
         private BigDecimal totalExpenses;
         private BigDecimal netCashFlow;

@@ -3,14 +3,15 @@ package com.finance.transaction.service;
 import com.finance.transaction.dto.TransactionRequest;
 import com.finance.transaction.dto.TransactionSummary;
 import com.finance.transaction.filter.UserContextFilter;
+import com.finance.transaction.model.Category;
 import com.finance.transaction.model.Transaction;
 import com.finance.transaction.model.TransactionType;
+import com.finance.transaction.repository.CategoryRepository;
 import com.finance.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,26 +32,38 @@ class TransactionServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
-    @InjectMocks
+    @Mock
+    private CategoryRepository categoryRepository;
+
     private TransactionService transactionService;
 
     private UUID testUserId;
     private UUID otherUserId;
     private Transaction testTransaction;
+    private Category testCategory;
 
     @BeforeEach
     void setUp() {
         testUserId = UUID.randomUUID();
         otherUserId = UUID.randomUUID();
 
+        testCategory = new Category();
+        testCategory.setId(UUID.randomUUID());
+        testCategory.setName("Salary");
+        testCategory.setType(TransactionType.INCOME);
+        testCategory.setDescription("Income category");
+
         testTransaction = new Transaction();
         testTransaction.setId(UUID.randomUUID());
         testTransaction.setUserId(testUserId);
         testTransaction.setType(TransactionType.INCOME);
         testTransaction.setAmount(new BigDecimal("100.00"));
-        testTransaction.setCategory("Salary");
+        testTransaction.setCategory(testCategory);
+        testTransaction.setCategoryName("Salary");
         testTransaction.setDate(LocalDate.now());
         testTransaction.setDescription("Monthly salary");
+
+        transactionService = new TransactionService(transactionRepository, categoryRepository);
     }
 
     @AfterEach
@@ -70,6 +83,7 @@ class TransactionServiceTest {
         request.setDate(LocalDate.now());
         request.setDescription("Monthly salary");
 
+        when(categoryRepository.findByName("Salary")).thenReturn(Optional.of(testCategory));
         when(transactionRepository.save(any(Transaction.class))).thenReturn(testTransaction);
 
         Transaction result = transactionService.createTransaction(request);
@@ -140,7 +154,7 @@ class TransactionServiceTest {
     void deleteTransaction_ShouldDelete_WhenUserOwnsIt() {
         UserContextFilter.currentUserId.set(testUserId);
 
-        when(transactionRepository.existsById(testTransaction.getId())).thenReturn(true);
+        when(transactionRepository.findById(testTransaction.getId())).thenReturn(Optional.of(testTransaction));
         doNothing().when(transactionRepository).deleteById(testTransaction.getId());
 
         transactionService.deleteTransaction(testTransaction.getId());

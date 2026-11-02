@@ -10,6 +10,7 @@ import com.finance.transaction.model.Transaction;
 import com.finance.transaction.model.TransactionType;
 import com.finance.transaction.repository.CategoryRepository;
 import com.finance.transaction.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +27,21 @@ public class TransactionService {
     private final CategoryRepository categoryRepository;
     private final TransactionEventProducer eventProducer;
 
+    @Autowired
     public TransactionService(TransactionRepository transactionRepository,
                              CategoryRepository categoryRepository,
                              TransactionEventProducer eventProducer) {
         this.transactionRepository = transactionRepository;
         this.categoryRepository = categoryRepository;
         this.eventProducer = eventProducer;
+    }
+
+    // Constructor for testing without event producer
+    public TransactionService(TransactionRepository transactionRepository,
+                             CategoryRepository categoryRepository) {
+        this.transactionRepository = transactionRepository;
+        this.categoryRepository = categoryRepository;
+        this.eventProducer = null;
     }
 
     private UUID getCurrentUserId() {
@@ -77,17 +87,19 @@ public class TransactionService {
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // Publish event
-        TransactionEvent event = new TransactionEvent(
-                savedTransaction.getId(),
-                savedTransaction.getUserId(),
-                savedTransaction.getType().name(),
-                savedTransaction.getAmount(),
-                savedTransaction.getCategoryName(),
-                savedTransaction.getDate(),
-                savedTransaction.getDescription(),
-                "CREATED"
-        );
-        eventProducer.publishTransactionEvent(event);
+        if (eventProducer != null) {
+            TransactionEvent event = new TransactionEvent(
+                    savedTransaction.getId(),
+                    savedTransaction.getUserId(),
+                    savedTransaction.getType().name(),
+                    savedTransaction.getAmount(),
+                    savedTransaction.getCategoryName(),
+                    savedTransaction.getDate(),
+                    savedTransaction.getDescription(),
+                    "CREATED"
+            );
+            eventProducer.publishTransactionEvent(event);
+        }
 
         return savedTransaction;
     }
@@ -125,9 +137,6 @@ public class TransactionService {
         UUID currentUserId = getCurrentUserId();
         verifyOwnership(id, currentUserId);
 
-        if (!transactionRepository.existsById(id)) {
-            throw new RuntimeException("Transaction not found with id: " + id);
-        }
         transactionRepository.deleteById(id);
     }
 

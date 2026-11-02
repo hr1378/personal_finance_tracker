@@ -50,7 +50,7 @@ function App() {
 
   const filteredTransactions = getFilteredTransactions()
 
-  const handleSubmit = async (data: { type: string; amount: number; category: string; date: string; description?: string }) => {
+  const handleSubmit = async (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string; date: string; description?: string }) => {
     if (!data.amount || !data.category || !data.date) {
       toast.error('Please fill in all required fields')
       return
@@ -146,7 +146,7 @@ function App() {
               isSubmitting={isSubmitting}
             />
 
-            {currentView === 'overview' && (
+            {currentView === 'overview' && summary && (
               <Overview transactions={filteredTransactions} summary={summary} budgets={budgets} debts={debts} />
             )}
 

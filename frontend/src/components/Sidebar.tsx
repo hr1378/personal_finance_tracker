@@ -54,8 +54,7 @@ export function Sidebar({ currentView, onViewChange, totalTransactions, totalBud
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-1 transition-colors"
-            style={{ hover: { backgroundColor: '#e8e8e4' } }}
+            className="lg:hidden p-1 transition-colors hover:bg-gray-200"
           >
             <X className="w-5 h-5" style={{ color: '#333333' }} />
           </button>

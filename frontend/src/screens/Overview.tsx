@@ -143,7 +143,7 @@ export function Overview({ transactions, summary, budgets = [], debts = [] }: Ov
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => typeof value === 'number' ? formatCurrency(value) : ''} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -158,7 +158,7 @@ export function Overview({ transactions, summary, budgets = [], debts = [] }: Ov
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#000000" strokeWidth={1} />
                 <XAxis dataKey="month" tick={{ fill: '#000000', fontSize: 12, fontWeight: 'bold' }} />
                 <YAxis tick={{ fill: '#000000', fontSize: 12, fontWeight: 'bold' }} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => typeof value === 'number' ? formatCurrency(value) : ''} />
                 <Bar dataKey="income" fill="#34c759" name="Income" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="expenses" fill="#ff3b30" name="Expenses" radius={[0, 0, 0, 0]} />
               </BarChart>

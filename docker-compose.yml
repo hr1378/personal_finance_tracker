@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -165,6 +163,9 @@ services:
       SPRING_DATASOURCE_USERNAME: finance
       SPRING_DATASOURCE_PASSWORD: finance
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      TRANSACTION_SERVICE_URL: http://transaction-service:8082
+      BUDGET_SERVICE_URL: http://budget-service:8083
+      DEBT_SERVICE_URL: http://debt-service:8084
     depends_on:
       postgres:
         condition: service_healthy

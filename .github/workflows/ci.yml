@@ -1,82 +1,96 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - '**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  # Frontend: Lint and build
   frontend:
-    name: Frontend Build
+    name: Frontend checks
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend
-
+        working-directory: frontend
     steps:
-      - name: Checkout code
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: 24
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
-        run: npm run lint
-
-      - name: Run type check
+      - name: Check TypeScript types
         run: npm run type-check
 
-      - name: Build frontend
-        run: npm run build
-
-  # Backend: Compile, test, and build all services
-  backend:
-    name: Backend Build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Compile all services
-        run: |
-          cd services/auth-service && mvn clean compile
-          cd ../transaction-service && mvn clean compile
-          cd ../budget-service && mvn clean compile
-          cd ../debt-service && mvn clean compile
-          cd ../dashboard-service && mvn clean compile
-          cd ../../infrastructure/gateway && mvn clean compile
+      - name: Run ESLint
+        run: npm run lint
 
       - name: Run unit tests
-        run: |
-          cd services/auth-service && mvn test
-          cd ../transaction-service && mvn test
-          cd ../budget-service && mvn test
-          cd ../debt-service && mvn test
-          cd ../dashboard-service && mvn test
-          cd ../../infrastructure/gateway && mvn test
+        run: npm test -- --run
 
-      - name: Build JARs
-        run: |
-          cd services/auth-service && mvn clean package -DskipTests
-          cd ../transaction-service && mvn clean package -DskipTests
-          cd ../budget-service && mvn clean package -DskipTests
-          cd ../debt-service && mvn clean package -DskipTests
-          cd ../dashboard-service && mvn clean package -DskipTests
-          cd ../../infrastructure/gateway && mvn clean package -DskipTests
+      - name: Build production frontend
+        run: npm run build
+
+  backend:
+    name: ${{ matrix.service.name }} checks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: Auth Service
+            path: services/auth-service
+          - name: Transaction Service
+            path: services/transaction-service
+          - name: Budget Service
+            path: services/budget-service
+          - name: Debt Service
+            path: services/debt-service
+          - name: Dashboard Service
+            path: services/dashboard-service
+          - name: API Gateway
+            path: infrastructure/gateway
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Resolve Maven dependencies
+        working-directory: ${{ matrix.service.path }}
+        run: mvn -B dependency:go-offline
+
+      - name: Compile, test, and package
+        working-directory: ${{ matrix.service.path }}
+        run: mvn -B verify
+
+      - name: Upload Maven test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service.path }}-test-reports
+          path: ${{ matrix.service.path }}/target/surefire-reports
+          if-no-files-found: ignore
+          retention-days: 7

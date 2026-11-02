@@ -165,7 +165,18 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 - Fallback mechanisms (not implemented)
 
 ### CI/CD
-- CD Pipeline mostly complete but requires:
+- GitHub Actions CI pipeline created but has failures (needs fixes):
+  - Frontend lint/type check failing (exit code 2)
+  - Frontend tests failing (exit code 1)
+  - Backend unit tests failing (exit code 1)
+  - Backend integration tests failing (exit code 1)
+  - Security scanning path error
+  - GitHub Actions deprecation warnings (Node.js 20, setup-java v4, CodeQL v3)
+- CD Pipeline created but needs testing after CI fixes:
+  - Docker image build and push configured
+  - Staging deployment via SSH configured
+  - Smoke tests configured
+- Additional requirements:
   - Apply backward-compatible database migrations
   - Production environment configuration
   - Actual cloud deployment
@@ -246,98 +257,3 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 - Chaos engineering
 - Bank integrations
 - Automated transaction imports
-
----
-
-## FUTURE SCOPE (Not Required for MVP)
-
-### Additional Features
-- [ ] Spending and debt charts (partially in frontend)
-- [ ] CSV export/import
-- [ ] Recurring transactions
-- [ ] Email payment reminders
-- [ ] Event-driven communication (SNS/SQS or RabbitMQ)
-- [ ] Distributed tracing
-- [ ] Advanced observability
-- [ ] Circuit breakers and advanced fault tolerance
-- [ ] Chaos engineering
-- [ ] Bank integrations
-- [ ] Automated transaction imports
-
----
-
-## PRIORITY ORDER FOR COMPLETION
-
-### High Priority (Security & Quality)
-1. ✅ JWT validation at API Gateway
-2. ✅ User ownership checks in all services
-3. ✅ Backend unit tests
-4. ✅ Integration tests with Testcontainers
-5. ✅ Health check endpoints
-6. ✅ GitHub Actions CI pipeline
-7. ✅ Dockerfiles for all services
-8. ✅ Container image builds
-
-### Medium Priority (Functionality)
-1. ✅ Budget spending calculations from transactions
-2. ✅ Dashboard data aggregation
-3. ✅ Category entity management
-4. ✅ Month-boundary filtering
-5. ⏳ Debt payoff estimates
-6. ⏳ API documentation verification
-
-### Low Priority (Infrastructure)
-1. ⏳ Cloud deployment (AWS/ECS)
-2. ⏳ Production configuration
-3. ⏳ Database backups
-4. ⏳ Monitoring and logging
-5. ⏳ SSL/HTTPS configuration
-6. ⏳ Documentation
-
----
-
-## COMPLETION STATUS
-
-**Overall Progress: ~70%**
-
-**Week 1: ~85% Complete**
-- Frontend: 90%
-- Backend Core: 85%
-- Database: 90%
-- Testing: 70%
-- DevOps: 80%
-
-**Week 2: ~55% Complete**
-- Frontend: 80%
-- Backend Core: 70%
-- Integration: 60%
-- Testing: 50%
-- CI/CD: 70%
-- Cloud: 0%
-
-**Security: 80%**
-- Authentication: 90%
-- Authorization: 90%
-- Data Isolation: 100%
-- Infrastructure Security: 20%
-
-**Testing: 50%**
-- Unit Tests: 80%
-- Integration Tests: 30%
-- E2E Tests: 0%
-- Security Tests: 90%
-
----
-
-## NEXT STEPS
-
-1. Add integration tests for remaining services (Budget, Debt, Auth, Dashboard, Gateway)
-2. Implement advanced debt payoff estimates with interest accrual
-3. Add circuit breakers and retry logic for service communication
-4. Configure API documentation (Springdoc/OpenAPI)
-5. Add Playwright E2E tests for critical user journeys
-6. Configure cloud deployment (AWS/ECS)
-7. Set up production monitoring and logging
-8. Complete deployment documentation
-9. Add rate limiting and security headers
-10. Implement database backups

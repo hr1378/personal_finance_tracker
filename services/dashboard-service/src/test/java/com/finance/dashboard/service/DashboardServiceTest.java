@@ -12,18 +12,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DashboardServiceTest {
@@ -64,24 +63,35 @@ class DashboardServiceTest {
 
     @Test
     void getDashboardSummary_ShouldReturnSummary_WhenUserIsAuthenticated() {
-        when(transactionWebClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(any(Class.class))).thenReturn(Mono.just(new DashboardService.TransactionSummary()));
+        // Setup transaction summary
+        DashboardService.TransactionSummary transactionSummary = new DashboardService.TransactionSummary();
+        transactionSummary.setTotalIncome(new BigDecimal("5000.00"));
+        transactionSummary.setTotalExpenses(new BigDecimal("3000.00"));
+        transactionSummary.setNetCashFlow(new BigDecimal("2000.00"));
 
-        when(debtWebClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersSpec.uri(anyString(), any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToFlux(any(Class.class))).thenReturn(Flux.empty());
+        lenient().when(transactionWebClient.get()).thenReturn(requestHeadersUriSpec);
+        lenient().when(requestHeadersUriSpec.uri(anyString(), any(UUID.class))).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToMono(any(Class.class))).thenReturn(Mono.just(transactionSummary));
 
-        when(budgetWebClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersSpec.uri(anyString(), any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToFlux(any(Class.class))).thenReturn(Flux.empty());
+        lenient().when(debtWebClient.get()).thenReturn(requestHeadersUriSpec);
+        lenient().when(requestHeadersUriSpec.uri(anyString(), any(UUID.class))).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToFlux(any(Class.class))).thenReturn(Flux.empty());
 
-        Mono<DashboardSummary> result = dashboardService.getDashboardSummary(testUserId);
+        lenient().when(budgetWebClient.get()).thenReturn(requestHeadersUriSpec);
+        lenient().when(requestHeadersUriSpec.uri(anyString(), any(UUID.class))).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToFlux(any(Class.class))).thenReturn(Flux.empty());
+
+        DashboardSummary result = dashboardService.getDashboardSummary(testUserId).block();
 
         assertNotNull(result);
+        assertEquals(new BigDecimal("5000.00"), result.getTotalIncome());
+        assertEquals(new BigDecimal("3000.00"), result.getTotalExpenses());
+        assertEquals(new BigDecimal("2000.00"), result.getNetCashFlow());
+        assertEquals(BigDecimal.ZERO, result.getOutstandingDebt());
+        assertEquals(BigDecimal.ZERO, result.getBudgetUtilization());
     }
 
     @Test

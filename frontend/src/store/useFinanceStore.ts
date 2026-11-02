@@ -13,7 +13,7 @@ interface FinanceStore {
   // Actions
   fetchTransactions: (userId?: string, type?: 'INCOME' | 'EXPENSE') => Promise<void>
   fetchSummary: (userId?: string) => Promise<void>
-  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => Promise<void>
+  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt' | 'userId'>) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
   fetchBudgets: (userId: string, month?: number, year?: number) => Promise<void>
   addBudget: (data: BudgetRequest) => Promise<void>
