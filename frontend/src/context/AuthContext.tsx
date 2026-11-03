@@ -37,12 +37,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const login = async (email: string, password: string) => {
-    // Call auth service
-    const response = await fetch('http://localhost:8080/api/auth/login', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     })
+    if (!response.ok) {
+      throw new Error('Login failed')
+    }
     const data = await response.json()
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify({ id: data.userId, email: data.email, preferredCurrency: data.preferredCurrency }))
@@ -54,11 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, preferredCurrency?: string) => {
-    const response = await fetch('http://localhost:8080/api/auth/register', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, preferredCurrency })
     })
+    if (!response.ok) {
+      throw new Error('Registration failed')
+    }
     const data = await response.json()
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify({ id: data.userId, email: data.email, preferredCurrency: data.preferredCurrency }))

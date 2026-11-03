@@ -12,6 +12,7 @@ interface FinanceStore {
 
   // Actions
   fetchTransactions: (userId?: string, type?: 'INCOME' | 'EXPENSE') => Promise<void>
+  loadDemoData: (userId?: string) => void
   fetchSummary: (userId?: string) => Promise<void>
   addTransaction: (data: Omit<Transaction, 'id' | 'createdAt' | 'userId'>) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
@@ -32,6 +33,47 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
   debts: [],
   isLoading: false,
   error: null,
+
+  loadDemoData: (userId = 'demo-user') => {
+    const now = new Date()
+    const date = (daysAgo: number) => {
+      const value = new Date(now)
+      value.setDate(value.getDate() - daysAgo)
+      return value.toISOString().slice(0, 10)
+    }
+    const createdAt = now.toISOString()
+    const transactions: Transaction[] = [
+      { id: 'demo-1', userId, type: 'INCOME', amount: 6200, category: 'Salary', date: date(27), description: 'Monthly salary', createdAt },
+      { id: 'demo-2', userId, type: 'EXPENSE', amount: 1850, category: 'Housing', date: date(24), description: 'Rent and utilities', createdAt },
+      { id: 'demo-3', userId, type: 'EXPENSE', amount: 540, category: 'Food', date: date(17), description: 'Groceries and dining', createdAt },
+      { id: 'demo-4', userId, type: 'EXPENSE', amount: 160, category: 'Transportation', date: date(11), description: 'Transit and fuel', createdAt },
+      { id: 'demo-5', userId, type: 'EXPENSE', amount: 95, category: 'Entertainment', date: date(5), description: 'Streaming and movies', createdAt },
+    ]
+    const totalIncome = transactions
+      .filter((transaction) => transaction.type === 'INCOME')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+    const totalExpenses = transactions
+      .filter((transaction) => transaction.type === 'EXPENSE')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
+
+    set({
+      transactions,
+      summary: { totalIncome, totalExpenses, netCashFlow: totalIncome - totalExpenses },
+      budgets: [
+        { id: 'demo-budget-1', userId, category: 'Housing', amount: 2200, spent: 1850, month, year },
+        { id: 'demo-budget-2', userId, category: 'Food', amount: 700, spent: 540, month, year },
+        { id: 'demo-budget-3', userId, category: 'Transportation', amount: 300, spent: 160, month, year },
+      ],
+      debts: [
+        { id: 'demo-debt-1', userId, name: 'Student loan', totalAmount: 12000, paidAmount: 3500, interestRate: 4.8, dueDate: date(-20) },
+        { id: 'demo-debt-2', userId, name: 'Credit card', totalAmount: 2400, paidAmount: 900, interestRate: 18.9, dueDate: date(-12) },
+      ],
+      error: null,
+      isLoading: false,
+    })
+  },
 
   fetchTransactions: async (userId?: string, type?: 'INCOME' | 'EXPENSE') => {
     set({ isLoading: true, error: null })

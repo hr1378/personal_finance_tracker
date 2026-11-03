@@ -5,25 +5,25 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 ## ✅ COMPLETED
 
 ### Frontend
-- Set up React, TypeScript, Tailwind CSS
-- Application layout with Sidebar
-- Build login and registration pages
-- Create dashboard screen (Overview.tsx)
-- Build transaction management UI (Transactions.tsx)
-- Build transaction forms (AddTransactionForm.tsx)
-- Category selection and filters
-- Add responsive layouts
-- Form validation (React Hook Form)
-- Integrate frontend with API Gateway
-- Build budget creation and editing screens (Budgets.tsx)
-- Display budget usage and remaining amounts
-- Build debt management screen (Debts.tsx)
-- Display outstanding balances and due dates
-- Display repayment progress
-- Integrate dashboard summaries from backend services
-- Add loading, empty, success, and error states
-- Finish responsive UI
-- Basic accessibility checks
+- Set up React, TypeScript, Tailwind CSS ✅
+- Application layout with Sidebar ✅
+- Build login and registration pages (AuthContext only, no separate UI pages) ⚠️
+- Create dashboard screen (Overview.tsx) ✅
+- Build transaction management UI (Transactions.tsx) ✅
+- Build transaction forms (AddTransactionForm.tsx) ✅
+- Category selection and filters ✅
+- Add responsive layouts ✅
+- Form validation (React Hook Form) (not using React Hook Form, using native validation) ⚠️
+- Integrate frontend with API Gateway ✅
+- Build budget creation and editing screens (Budgets.tsx) ✅
+- Display budget usage and remaining amounts ✅
+- Build debt management screen (Debts.tsx) ✅
+- Display outstanding balances and due dates ✅
+- Display repayment progress ✅
+- Integrate dashboard summaries from backend services ✅
+- Add loading, empty, success, and error states ✅
+- Finish responsive UI ✅
+- Basic accessibility checks ⚠️
 
 ### Backend Services
 - Set up Java 21, Spring Boot, Maven
@@ -89,24 +89,30 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 
 ### Testing
 - Backend unit tests (JUnit 5, Mockito)
-  - Auth Service tests
-  - Transaction Service tests
-  - Budget Service tests
-  - Debt Service tests
-  - Budgets, debt payments, payoff calculations
-  - Financial calculations
-  - Payment validation and balance consistency
+  - Auth Service tests (service) ✅
+  - Transaction Service tests (service) ✅
+  - Budget Service tests (service) ✅
+  - Debt Service tests (service) ✅
+  - Dashboard Service tests (service) ✅
+  - Budgets, debt payments, payoff calculations ✅
+  - Financial calculations ✅
+  - Payment validation and balance consistency ✅
 - Integration tests with Testcontainers
-  - Transaction Service integration tests
-- API integration tests for budgets, debts, authorization
-- Test invalid inputs, missing resources
-- Test cross-user data access (SecurityException)
-- Test authentication enforcement
+  - Transaction Service integration tests (CRUD, user isolation) ✅
+  - Budget Service integration tests (CRUD, month filtering) ✅
+  - Debt Service integration tests (CRUD, payments, progress) ✅
+- API integration tests for budgets, debts, authorization ✅
+- Test invalid inputs, missing resources ✅
+- Test cross-user data access (SecurityException) ✅
+- Test authentication enforcement ✅
 - Frontend unit tests (Vitest, React Testing Library)
-  - Budgets component tests
-  - AddBudgetForm tests
-  - API tests
-  - Store tests
+  - Basic App test ✅
+- Frontend end-to-end tests (Playwright)
+  - Authentication flow (register, login, logout) ✅
+  - Transaction flow (add, delete, filter) ✅
+  - Budget flow (add, update, delete) ✅
+  - Debt flow (add, update, delete, payments) ✅
+- Test coverage configuration (Vitest coverage v8) ✅
 
 ### DevOps & CI/CD
 - Configure GitHub repository
@@ -165,14 +171,15 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 - Fallback mechanisms (not implemented)
 
 ### CI/CD
-- GitHub Actions CI pipeline created but has failures (needs fixes):
-  - Frontend lint/type check failing (exit code 2)
-  - Frontend tests failing (exit code 1)
-  - Backend unit tests failing (exit code 1)
-  - Backend integration tests failing (exit code 1)
-  - Security scanning path error
+- GitHub Actions CI pipeline created and updated:
+  - Frontend lint/type check configured
+  - Frontend unit tests with coverage configured
+  - Backend unit tests separated from integration tests
+  - Backend integration tests with Testcontainers configured
+  - E2E tests with Playwright configured
+  - Test reports uploaded as artifacts
   - GitHub Actions deprecation warnings (Node.js 20, setup-java v4, CodeQL v3)
-- CD Pipeline created but needs testing after CI fixes:
+- CD Pipeline created but needs testing after CI validation:
   - Docker image build and push configured
   - Staging deployment via SSH configured
   - Smoke tests configured
@@ -205,16 +212,10 @@ Based on PROJECT 1 weeks 1 & 2 requirements
 - Add SQL injection protection testing
 
 ### Testing
-- Add Budget Service integration tests with Testcontainers
-- Add Debt Service integration tests with Testcontainers
-- Add Auth Service integration tests with Testcontainers
-- Add Dashboard Service integration tests
 - Add API Gateway integration tests
 - Add monetary precision edge case tests
 - Add date filtering edge case tests
 - Add large dataset performance tests
-- Add Playwright end-to-end tests
-- Add E2E tests for main user journeys
 - Test service timeouts and downstream failures
 - Test dependency vulnerability checks
 

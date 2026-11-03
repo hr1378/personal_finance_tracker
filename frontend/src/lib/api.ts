@@ -8,10 +8,20 @@ import type {
   DebtRequest
 } from '../types/finance'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const TRANSACTION_API_URL = `${API_BASE_URL}/transactions`
 const BUDGET_API_URL = `${API_BASE_URL}/budgets`
 const DEBT_API_URL = `${API_BASE_URL}/debts`
+
+// Helper to get auth headers
+function getAuthHeaders() {
+  const token = localStorage.getItem('token')
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return headers
+}
 
 // Backend API response types (internal)
 interface BackendBudget {
@@ -46,14 +56,18 @@ export const api = {
     if (userId) params.append('userId', userId)
     if (type) params.append('type', type)
 
-    const response = await fetch(`${TRANSACTION_API_URL}?${params}`)
+    const response = await fetch(`${TRANSACTION_API_URL}?${params}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch transactions')
     return response.json()
   },
 
   // Get transaction by ID
   async getTransactionById(id: string): Promise<Transaction> {
-    const response = await fetch(`${TRANSACTION_API_URL}/${id}`)
+    const response = await fetch(`${TRANSACTION_API_URL}/${id}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch transaction')
     return response.json()
   },
@@ -62,7 +76,7 @@ export const api = {
   async createTransaction(data: TransactionRequest): Promise<Transaction> {
     const response = await fetch(TRANSACTION_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     })
     if (!response.ok) throw new Error('Failed to create transaction')
@@ -72,7 +86,8 @@ export const api = {
   // Delete transaction
   async deleteTransaction(id: string): Promise<void> {
     const response = await fetch(`${TRANSACTION_API_URL}/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     })
     if (!response.ok) throw new Error('Failed to delete transaction')
   },
@@ -82,7 +97,9 @@ export const api = {
     const params = new URLSearchParams()
     if (userId) params.append('userId', userId)
 
-    const response = await fetch(`${TRANSACTION_API_URL}/summary?${params}`)
+    const response = await fetch(`${TRANSACTION_API_URL}/summary?${params}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch summary')
     return response.json()
   },
@@ -94,7 +111,9 @@ export const api = {
     if (month !== undefined && year !== undefined) {
       url += `/month/${month}/year/${year}`
     }
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch budgets')
     const backendBudgets: BackendBudget[] = await response.json()
     // Transform backend response to frontend format
@@ -111,7 +130,9 @@ export const api = {
 
   // Get budget by ID
   async getBudgetById(id: string): Promise<Budget> {
-    const response = await fetch(`${BUDGET_API_URL}/${id}`)
+    const response = await fetch(`${BUDGET_API_URL}/${id}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch budget')
     return response.json()
   },
@@ -127,7 +148,7 @@ export const api = {
     }
     const response = await fetch(BUDGET_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(backendData)
     })
     if (!response.ok) throw new Error('Failed to create budget')
@@ -154,7 +175,7 @@ export const api = {
     }
     const response = await fetch(`${BUDGET_API_URL}/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(backendData)
     })
     if (!response.ok) throw new Error('Failed to update budget')
@@ -173,7 +194,8 @@ export const api = {
   // Delete budget
   async deleteBudget(id: string): Promise<void> {
     const response = await fetch(`${BUDGET_API_URL}/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     })
     if (!response.ok) throw new Error('Failed to delete budget')
   },
@@ -181,7 +203,9 @@ export const api = {
   // ==================== DEBTS ====================
   // Get debts by user
   async getDebts(userId: string): Promise<Debt[]> {
-    const response = await fetch(`${DEBT_API_URL}/user/${userId}`)
+    const response = await fetch(`${DEBT_API_URL}/user/${userId}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch debts')
     const backendDebts: BackendDebt[] = await response.json()
     // Transform backend response to frontend format
@@ -198,7 +222,9 @@ export const api = {
 
   // Get debt by ID
   async getDebtById(id: string): Promise<Debt> {
-    const response = await fetch(`${DEBT_API_URL}/${id}`)
+    const response = await fetch(`${DEBT_API_URL}/${id}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) throw new Error('Failed to fetch debt')
     return response.json()
   },
@@ -216,7 +242,7 @@ export const api = {
     }
     const response = await fetch(DEBT_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(backendData)
     })
     if (!response.ok) throw new Error('Failed to create debt')
@@ -245,7 +271,7 @@ export const api = {
     }
     const response = await fetch(`${DEBT_API_URL}/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(backendData)
     })
     if (!response.ok) throw new Error('Failed to update debt')
@@ -264,7 +290,8 @@ export const api = {
   // Delete debt
   async deleteDebt(id: string): Promise<void> {
     const response = await fetch(`${DEBT_API_URL}/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     })
     if (!response.ok) throw new Error('Failed to delete debt')
   }

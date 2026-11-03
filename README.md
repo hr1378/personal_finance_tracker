@@ -38,19 +38,48 @@ The application consists of:
 ### Prerequisites
 - Docker and Docker Compose
 - Java 21
-- Node.js 18+
+- Node.js 20+
 - Maven
 
-### Start Services
+### Option 1: Full Docker Setup (Production-like)
 
 ```bash
-# Start database and all services
-cd infrastructure
+# Start all services including frontend
 docker-compose up -d
 
-# Start frontend
-cd ../frontend
+# Access the application at http://localhost:3000
+```
+
+### Option 2: Development Mode (Recommended)
+
+```bash
+# Start backend services only
+docker-compose -f docker-compose.dev.yml up -d
+
+# Start frontend dev server
+cd frontend
 npm install
+npm run dev
+
+# Access the application at http://localhost:5173
+```
+
+### Option 3: Local Backend Development
+
+```bash
+# Start only infrastructure (PostgreSQL, Kafka)
+docker-compose -f docker-compose.dev.yml up -d postgres kafka zookeeper
+
+# Start each service locally
+cd services/auth-service && mvn spring-boot:run
+cd services/transaction-service && mvn spring-boot:run
+cd services/budget-service && mvn spring-boot:run
+cd services/debt-service && mvn spring-boot:run
+cd services/dashboard-service && mvn spring-boot:run
+cd infrastructure/gateway && mvn spring-boot:run
+
+# Start frontend
+cd frontend
 npm run dev
 ```
 

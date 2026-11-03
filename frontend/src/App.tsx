@@ -9,6 +9,7 @@ import { AddTransactionForm } from './components/AddTransactionForm'
 import { PageHeader } from './components/layout/PageHeader'
 import { toast } from 'sonner'
 import { useFinanceStore } from './store/useFinanceStore'
+import { useAuth } from './context/AuthContext'
 import type { View } from './types'
 
 function App() {
@@ -23,9 +24,12 @@ function App() {
     fetchSummary,
     fetchBudgets,
     fetchDebts,
+    loadDemoData,
     addTransaction,
     deleteTransaction
   } = useFinanceStore()
+
+  const { user, isAuthenticated } = useAuth()
 
   const [currentView, setCurrentView] = useState<View>('overview')
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
@@ -33,15 +37,15 @@ function App() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Fetch data on mount
+  // Fetch data on mount and when auth state changes
   useEffect(() => {
-    fetchTransactions()
-    fetchSummary()
-    // Using a hardcoded userId for now - will be replaced with auth later
-    const userId = '550e8400-e29b-41d4-a716-446655440000'
-    fetchBudgets(userId)
-    fetchDebts(userId)
-  }, [fetchTransactions, fetchSummary, fetchBudgets, fetchDebts])
+    if (isAuthenticated && user?.id) {
+      fetchTransactions()
+      fetchSummary()
+      fetchBudgets(user.id)
+      fetchDebts(user.id)
+    }
+  }, [isAuthenticated, user, fetchTransactions, fetchSummary, fetchBudgets, fetchDebts])
 
   const getFilteredTransactions = () => {
     if (filter === 'ALL') return transactions
@@ -111,13 +115,22 @@ function App() {
           </div>
         )}
 
-        {!isLoading && !error && (
+        {!isLoading && (
           <>
             <PageHeader
               title={currentView.charAt(0).toUpperCase() + currentView.slice(1)}
               subtitle="Your financial picture at a glance"
               actions={
                 <>
+                  {currentView === 'overview' && transactions.length === 0 && budgets.length === 0 && debts.length === 0 && (
+                    <button
+                      onClick={() => loadDemoData(user?.id)}
+                      className="px-4 py-2 brutal-border brutal-shadow-sm hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all font-bold uppercase tracking-wider"
+                      style={{ backgroundColor: '#34c759', color: '#000000', borderColor: '#000000' }}
+                    >
+                      Load Demo Data
+                    </button>
+                  )}
                   <select
                     value={timeFilter}
                     onChange={(e) => setTimeFilter(e.target.value as 'all' | 'month' | 'year')}
@@ -146,8 +159,13 @@ function App() {
               isSubmitting={isSubmitting}
             />
 
-            {currentView === 'overview' && summary && (
-              <Overview transactions={filteredTransactions} summary={summary} budgets={budgets} debts={debts} />
+            {currentView === 'overview' && (
+              <Overview
+                transactions={filteredTransactions}
+                summary={summary ?? { totalIncome: 0, totalExpenses: 0, netCashFlow: 0 }}
+                budgets={budgets}
+                debts={debts}
+              />
             )}
 
             {currentView === 'transactions' && (
