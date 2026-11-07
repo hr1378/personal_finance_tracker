@@ -84,6 +84,8 @@ public class TransactionService {
                 request.getDate(),
                 request.getDescription()
         );
+        transaction.setAccountId(request.getAccountId());
+        transaction.setCardId(request.getCardId());
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // Publish event
@@ -96,6 +98,8 @@ public class TransactionService {
                     savedTransaction.getCategoryName(),
                     savedTransaction.getDate(),
                     savedTransaction.getDescription(),
+                    savedTransaction.getAccountId(),
+                    savedTransaction.getCardId(),
                     "CREATED"
             );
             eventProducer.publishTransactionEvent(event);

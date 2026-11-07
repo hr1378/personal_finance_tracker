@@ -63,8 +63,12 @@ jobs:
             path: services/budget-service
           - name: Debt Service
             path: services/debt-service
+          - name: Accounts Service
+            path: services/accounts-service
           - name: Dashboard Service
             path: services/dashboard-service
+          - name: Chatbot Service
+            path: services/chatbot-service
           - name: API Gateway
             path: infrastructure/gateway
     steps:
@@ -115,8 +119,12 @@ jobs:
             path: services/budget-service
           - name: Debt Service
             path: services/debt-service
+          - name: Accounts Service
+            path: services/accounts-service
           - name: Dashboard Service
             path: services/dashboard-service
+          - name: Chatbot Service
+            path: services/chatbot-service
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

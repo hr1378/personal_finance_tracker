@@ -45,6 +45,12 @@ public class Transaction {
     @Column
     private String description;
 
+    @Column
+    private UUID accountId;
+
+    @Column
+    private UUID cardId;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -136,6 +142,22 @@ public class Transaction {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
+    }
+
+    public UUID getCardId() {
+        return cardId;
+    }
+
+    public void setCardId(UUID cardId) {
+        this.cardId = cardId;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,0 +1,8 @@
+apiVersion: 1
+
+dashboards:
+  - name: Finance Services
+    folder: General
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

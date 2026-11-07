@@ -12,6 +12,8 @@ public class TransactionRequest {
     private String category;
     private LocalDate date;
     private String description;
+    private UUID accountId;
+    private UUID cardId;
 
     public TransactionRequest() {
     }
@@ -62,5 +64,21 @@ public class TransactionRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
+    }
+
+    public UUID getCardId() {
+        return cardId;
+    }
+
+    public void setCardId(UUID cardId) {
+        this.cardId = cardId;
     }
 }

@@ -6,6 +6,8 @@ export interface Transaction {
   category: string
   date: string
   description?: string
+  accountId?: string
+  cardId?: string
   createdAt: string
 }
 
@@ -22,6 +24,8 @@ export interface TransactionRequest {
   category: string
   date: string
   description?: string
+  accountId?: string
+  cardId?: string
 }
 
 export interface Budget {
@@ -58,4 +62,80 @@ export interface DebtRequest {
   totalAmount: number
   interestRate: number
   dueDate: string
+}
+
+export type AccountType = 'CHECKING' | 'SAVINGS' | 'MONEY_MARKET'
+export type CardType = 'CREDIT' | 'DEBIT'
+export type CardNetwork = 'VISA' | 'MASTERCARD' | 'AMEX' | 'DISCOVER' | 'OTHER'
+
+export interface Account {
+  id: string
+  userId: string
+  name: string
+  institution?: string
+  accountType: AccountType
+  currency: string
+  currentBalance: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AccountRequest {
+  userId?: string
+  name: string
+  institution?: string
+  accountType: AccountType
+  currency?: string
+  currentBalance: number
+  isActive?: boolean
+}
+
+export interface Card {
+  id: string
+  userId: string
+  accountId?: string
+  name: string
+  cardType: CardType
+  lastFour?: string
+  network?: CardNetwork
+  creditLimit?: number
+  currentBalance: number
+  apr?: number
+  expiryMonth?: number
+  expiryYear?: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CardRequest {
+  userId?: string
+  accountId?: string
+  name: string
+  cardType: CardType
+  lastFour?: string
+  network?: CardNetwork
+  creditLimit?: number
+  currentBalance: number
+  apr?: number
+  expiryMonth?: number
+  expiryYear?: number
+  isActive?: boolean
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatRequest {
+  message: string
+  includeFinanceData: boolean
+  history?: ChatMessage[]
+}
+
+export interface ChatResponse {
+  reply: string
+  provider: string
 }

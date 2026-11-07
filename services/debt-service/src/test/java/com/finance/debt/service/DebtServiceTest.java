@@ -2,6 +2,7 @@ package com.finance.debt.service;
 
 import com.finance.debt.dto.DebtPaymentRequest;
 import com.finance.debt.dto.DebtRequest;
+import com.finance.debt.event.DebtPaymentEventProducer;
 import com.finance.debt.filter.UserContextFilter;
 import com.finance.debt.model.Debt;
 import com.finance.debt.model.DebtPayment;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,7 +36,6 @@ class DebtServiceTest {
     @Mock
     private DebtPaymentRepository debtPaymentRepository;
 
-    @InjectMocks
     private DebtService debtService;
 
     private UUID testUserId;
@@ -45,6 +44,10 @@ class DebtServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Real producer is safe: publishDebtPaymentEvent swallows all exceptions
+        // (kafkaTemplate is null in tests, the NPE is caught and logged).
+        debtService = new DebtService(debtRepository, debtPaymentRepository,
+                new DebtPaymentEventProducer());
         testUserId = UUID.randomUUID();
         otherUserId = UUID.randomUUID();
 
@@ -185,6 +188,7 @@ class DebtServiceTest {
     void deleteDebt_ShouldDelete_WhenUserOwnsIt() {
         UserContextFilter.currentUserId.set(testUserId);
 
+        when(debtRepository.findById(testDebt.getId())).thenReturn(Optional.of(testDebt));
         when(debtRepository.existsById(testDebt.getId())).thenReturn(true);
         doNothing().when(debtRepository).deleteById(testDebt.getId());
 

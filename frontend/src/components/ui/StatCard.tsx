@@ -11,28 +11,36 @@ interface StatCardProps {
     positive: boolean
   }
   className?: string
+  variant?: 'primary' | 'secondary' | 'none'
 }
 
-export function StatCard({ label, value, icon, trend, className }: StatCardProps) {
+export function StatCard({ label, value, icon, trend, className, variant = 'secondary' }: StatCardProps) {
   return (
-    <Card hover className={cn('p-6', className)}>
-      <div className="flex items-start justify-between mb-3">
+    <Card
+      hover
+      variant={variant}
+      className={cn('p-6 relative overflow-hidden', className)}
+    >
+      <div className="relative flex items-start justify-between mb-3">
         <div className="flex-1">
-          <p className="text-sm font-bold uppercase tracking-wider" style={{ color: '#666666' }}>{label}</p>
-          <p className="text-3xl font-bold mt-2" style={{ color: '#000000' }}>{value}</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-slate-400">{label}</p>
+          <p className="text-3xl font-bold mt-2 text-white">{value}</p>
         </div>
         {icon && (
-          <div className="w-12 h-12 brutal-border-sm flex items-center justify-center" style={{ backgroundColor: '#f0f0ec', borderColor: '#000000' }}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center glass">
             {icon}
           </div>
         )}
       </div>
       {trend && (
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <span className="font-bold" style={{ color: trend.positive ? '#34c759' : '#ff3b30' }}>
+        <div className="relative flex items-center gap-2 text-sm font-medium">
+          <span className={cn(
+            'font-bold',
+            trend.positive ? 'text-emerald-400' : 'text-rose-400'
+          )}>
             {trend.positive ? '↑' : '↓'} {trend.value}
           </span>
-          <span style={{ color: '#666666' }}>vs last period</span>
+          <span className="text-slate-500">vs last period</span>
         </div>
       )}
     </Card>

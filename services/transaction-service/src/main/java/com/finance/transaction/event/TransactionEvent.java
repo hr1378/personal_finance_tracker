@@ -12,6 +12,8 @@ public class TransactionEvent {
     private String category;
     private LocalDate date;
     private String description;
+    private UUID accountId;
+    private UUID cardId;
     private String eventType; // CREATED, UPDATED, DELETED
     private long timestamp;
 
@@ -19,7 +21,7 @@ public class TransactionEvent {
     }
 
     public TransactionEvent(UUID id, UUID userId, String type, BigDecimal amount, String category,
-                           LocalDate date, String description, String eventType) {
+                           LocalDate date, String description, UUID accountId, UUID cardId, String eventType) {
         this.id = id;
         this.userId = userId;
         this.type = type;
@@ -27,6 +29,8 @@ public class TransactionEvent {
         this.category = category;
         this.date = date;
         this.description = description;
+        this.accountId = accountId;
+        this.cardId = cardId;
         this.eventType = eventType;
         this.timestamp = System.currentTimeMillis();
     }
@@ -85,6 +89,22 @@ public class TransactionEvent {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
+    }
+
+    public UUID getCardId() {
+        return cardId;
+    }
+
+    public void setCardId(UUID cardId) {
+        this.cardId = cardId;
     }
 
     public String getEventType() {

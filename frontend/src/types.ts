@@ -1,4 +1,4 @@
-export type View = 'overview' | 'transactions' | 'analytics' | 'budgets' | 'debts'
+export type View = 'overview' | 'transactions' | 'analytics' | 'budgets' | 'debts' | 'accounts'
 
 export interface User {
   id: string

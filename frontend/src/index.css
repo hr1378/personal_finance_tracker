@@ -20,4 +20,75 @@
   .brutal-border-sm {
     border-width: 2px;
   }
+
+  /* Glassmorphism Utilities - Dark & Subtle */
+  .glass {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card {
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card-dark {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-hover {
+    transition: all 0.2s ease;
+  }
+
+  .glass-hover:hover {
+    background: rgba(30, 41, 59, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.4);
+  }
+
+  /* Single Color Scheme - Dark Blue/Indigo */
+  .gradient-bg {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e3a5f 100%);
+  }
+
+  .gradient-bg-primary {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+  }
+
+  .gradient-bg-secondary {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  }
+
+  /* Subtle Accent */
+  .accent-glow {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
+  }
+
+  /* Scrollbar Styling */
+  .glass-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .glass-scrollbar::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 8px;
+  }
+
+  .glass-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+  }
+
+  .glass-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+  }
 }

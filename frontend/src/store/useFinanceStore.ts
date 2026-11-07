@@ -1,18 +1,19 @@
 import { create } from 'zustand'
 import { api } from '../lib/api'
-import type { Transaction, TransactionSummary, Budget, Debt, BudgetRequest, DebtRequest } from '../types/finance'
+import type { Transaction, TransactionSummary, Budget, Debt, BudgetRequest, DebtRequest, Account, AccountRequest, Card, CardRequest } from '../types/finance'
 
 interface FinanceStore {
   transactions: Transaction[]
   summary: TransactionSummary | null
   budgets: Budget[]
   debts: Debt[]
+  accounts: Account[]
+  cards: Card[]
   isLoading: boolean
   error: string | null
 
   // Actions
   fetchTransactions: (userId?: string, type?: 'INCOME' | 'EXPENSE') => Promise<void>
-  loadDemoData: (userId?: string) => void
   fetchSummary: (userId?: string) => Promise<void>
   addTransaction: (data: Omit<Transaction, 'id' | 'createdAt' | 'userId'>) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
@@ -24,6 +25,14 @@ interface FinanceStore {
   addDebt: (data: DebtRequest) => Promise<void>
   updateDebt: (id: string, data: DebtRequest) => Promise<void>
   deleteDebt: (id: string) => Promise<void>
+  fetchAccounts: (userId: string) => Promise<void>
+  addAccount: (data: AccountRequest) => Promise<void>
+  updateAccount: (id: string, data: AccountRequest) => Promise<void>
+  deleteAccount: (id: string) => Promise<void>
+  fetchCards: (userId: string) => Promise<void>
+  addCard: (data: CardRequest) => Promise<void>
+  updateCard: (id: string, data: CardRequest) => Promise<void>
+  deleteCard: (id: string) => Promise<void>
 }
 
 export const useFinanceStore = create<FinanceStore>((set) => ({
@@ -31,49 +40,10 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
   summary: null,
   budgets: [],
   debts: [],
+  accounts: [],
+  cards: [],
   isLoading: false,
   error: null,
-
-  loadDemoData: (userId = 'demo-user') => {
-    const now = new Date()
-    const date = (daysAgo: number) => {
-      const value = new Date(now)
-      value.setDate(value.getDate() - daysAgo)
-      return value.toISOString().slice(0, 10)
-    }
-    const createdAt = now.toISOString()
-    const transactions: Transaction[] = [
-      { id: 'demo-1', userId, type: 'INCOME', amount: 6200, category: 'Salary', date: date(27), description: 'Monthly salary', createdAt },
-      { id: 'demo-2', userId, type: 'EXPENSE', amount: 1850, category: 'Housing', date: date(24), description: 'Rent and utilities', createdAt },
-      { id: 'demo-3', userId, type: 'EXPENSE', amount: 540, category: 'Food', date: date(17), description: 'Groceries and dining', createdAt },
-      { id: 'demo-4', userId, type: 'EXPENSE', amount: 160, category: 'Transportation', date: date(11), description: 'Transit and fuel', createdAt },
-      { id: 'demo-5', userId, type: 'EXPENSE', amount: 95, category: 'Entertainment', date: date(5), description: 'Streaming and movies', createdAt },
-    ]
-    const totalIncome = transactions
-      .filter((transaction) => transaction.type === 'INCOME')
-      .reduce((total, transaction) => total + transaction.amount, 0)
-    const totalExpenses = transactions
-      .filter((transaction) => transaction.type === 'EXPENSE')
-      .reduce((total, transaction) => total + transaction.amount, 0)
-    const month = now.getMonth() + 1
-    const year = now.getFullYear()
-
-    set({
-      transactions,
-      summary: { totalIncome, totalExpenses, netCashFlow: totalIncome - totalExpenses },
-      budgets: [
-        { id: 'demo-budget-1', userId, category: 'Housing', amount: 2200, spent: 1850, month, year },
-        { id: 'demo-budget-2', userId, category: 'Food', amount: 700, spent: 540, month, year },
-        { id: 'demo-budget-3', userId, category: 'Transportation', amount: 300, spent: 160, month, year },
-      ],
-      debts: [
-        { id: 'demo-debt-1', userId, name: 'Student loan', totalAmount: 12000, paidAmount: 3500, interestRate: 4.8, dueDate: date(-20) },
-        { id: 'demo-debt-2', userId, name: 'Credit card', totalAmount: 2400, paidAmount: 900, interestRate: 18.9, dueDate: date(-12) },
-      ],
-      error: null,
-      isLoading: false,
-    })
-  },
 
   fetchTransactions: async (userId?: string, type?: 'INCOME' | 'EXPENSE') => {
     set({ isLoading: true, error: null })
@@ -220,6 +190,106 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
       }))
     } catch {
       set({ error: 'Failed to delete debt', isLoading: false })
+    }
+  },
+
+  fetchAccounts: async (userId: string) => {
+    set({ isLoading: true, error: null })
+    try {
+      const data = await api.getAccounts(userId)
+      set({ accounts: data, isLoading: false })
+    } catch {
+      set({ error: 'Failed to fetch accounts', isLoading: false })
+    }
+  },
+
+  addAccount: async (data: AccountRequest) => {
+    set({ isLoading: true, error: null })
+    try {
+      const newAccount = await api.createAccount(data)
+      set((state) => ({
+        accounts: [...state.accounts, newAccount],
+        isLoading: false
+      }))
+    } catch {
+      set({ error: 'Failed to add account', isLoading: false })
+    }
+  },
+
+  updateAccount: async (id: string, data: AccountRequest) => {
+    set({ isLoading: true, error: null })
+    try {
+      const updatedAccount = await api.updateAccount(id, data)
+      set((state) => ({
+        accounts: state.accounts.map(a => a.id === id ? updatedAccount : a),
+        isLoading: false
+      }))
+    } catch {
+      set({ error: 'Failed to update account', isLoading: false })
+    }
+  },
+
+  deleteAccount: async (id: string) => {
+    set({ isLoading: true, error: null })
+    try {
+      await api.deleteAccount(id)
+      set((state) => ({
+        accounts: state.accounts.filter(a => a.id !== id),
+        // Clear account links on cards pointing to the deleted account
+        cards: state.cards.map(c => c.accountId === id ? { ...c, accountId: undefined } : c),
+        isLoading: false
+      }))
+    } catch {
+      set({ error: 'Failed to delete account', isLoading: false })
+    }
+  },
+
+  fetchCards: async (userId: string) => {
+    set({ isLoading: true, error: null })
+    try {
+      const data = await api.getCards(userId)
+      set({ cards: data, isLoading: false })
+    } catch {
+      set({ error: 'Failed to fetch cards', isLoading: false })
+    }
+  },
+
+  addCard: async (data: CardRequest) => {
+    set({ isLoading: true, error: null })
+    try {
+      const newCard = await api.createCard(data)
+      set((state) => ({
+        cards: [...state.cards, newCard],
+        isLoading: false
+      }))
+    } catch {
+      set({ error: 'Failed to add card', isLoading: false })
+    }
+  },
+
+  updateCard: async (id: string, data: CardRequest) => {
+    set({ isLoading: true, error: null })
+    try {
+      const updatedCard = await api.updateCard(id, data)
+      set((state) => ({
+        cards: state.cards.map(c => c.id === id ? updatedCard : c),
+        isLoading: false
+      }))
+    } catch {
+      set({ error: 'Failed to update card', isLoading: false })
+    }
+  },
+
+  deleteCard: async (id: string) => {
+    set({ isLoading: true, error: null })
+    try {
+      await api.deleteCard(id)
+      set((state) => ({
+        cards: state.cards.filter(c => c.id !== id),
+        isLoading: false
+      }))
+    } catch {
+      set({ error: 'Failed to delete card', isLoading: false })
     }
   }
 }))

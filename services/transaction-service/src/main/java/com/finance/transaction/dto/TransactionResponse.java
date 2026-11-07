@@ -13,12 +13,14 @@ public class TransactionResponse {
     private String category;
     private LocalDate date;
     private String description;
+    private UUID accountId;
+    private UUID cardId;
     private LocalDateTime createdAt;
 
     public TransactionResponse() {
     }
 
-    public TransactionResponse(UUID id, UUID userId, String type, BigDecimal amount, String category, LocalDate date, String description, LocalDateTime createdAt) {
+    public TransactionResponse(UUID id, UUID userId, String type, BigDecimal amount, String category, LocalDate date, String description, UUID accountId, UUID cardId, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
         this.type = type;
@@ -26,6 +28,8 @@ public class TransactionResponse {
         this.category = category;
         this.date = date;
         this.description = description;
+        this.accountId = accountId;
+        this.cardId = cardId;
         this.createdAt = createdAt;
     }
 
@@ -83,6 +87,22 @@ public class TransactionResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
+    }
+
+    public UUID getCardId() {
+        return cardId;
+    }
+
+    public void setCardId(UUID cardId) {
+        this.cardId = cardId;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -34,6 +34,12 @@ public class GatewayConfig {
                 .route("dashboard-service", r -> r.path("/api/dashboard/**")
                         .filters(f -> f.filter(jwtFilter.apply(new Object())))
                         .uri(env.getProperty("DASHBOARD_SERVICE_URL", "http://localhost:8085")))
+                .route("accounts-service", r -> r.path("/api/accounts/**", "/api/cards/**")
+                        .filters(f -> f.filter(jwtFilter.apply(new Object())))
+                        .uri(env.getProperty("ACCOUNTS_SERVICE_URL", "http://localhost:8086")))
+                .route("chatbot-service", r -> r.path("/api/chat/**")
+                        .filters(f -> f.filter(jwtFilter.apply(new Object())))
+                        .uri(env.getProperty("CHATBOT_SERVICE_URL", "http://localhost:8087")))
                 .build();
     }
 }

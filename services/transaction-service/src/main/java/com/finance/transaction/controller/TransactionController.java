@@ -33,6 +33,8 @@ public class TransactionController {
                 transaction.getCategoryName(),
                 transaction.getDate(),
                 transaction.getDescription(),
+                transaction.getAccountId(),
+                transaction.getCardId(),
                 transaction.getCreatedAt()
         );
     }
@@ -52,7 +54,9 @@ public class TransactionController {
     @GetMapping
     public ResponseEntity<List<TransactionResponse>> getTransactions(
             @RequestParam(required = false) UUID userId,
-            @RequestParam(required = false) TransactionType type) {
+            @RequestParam(required = false) TransactionType type,
+            @RequestParam(required = false) UUID accountId,
+            @RequestParam(required = false) UUID cardId) {
         List<Transaction> transactions;
         if (userId == null) {
             if (type == null) {
@@ -68,6 +72,16 @@ public class TransactionController {
                         .filter(t -> t.getType() == type)
                         .collect(Collectors.toList());
             }
+        }
+        if (accountId != null) {
+            transactions = transactions.stream()
+                    .filter(t -> accountId.equals(t.getAccountId()))
+                    .collect(Collectors.toList());
+        }
+        if (cardId != null) {
+            transactions = transactions.stream()
+                    .filter(t -> cardId.equals(t.getCardId()))
+                    .collect(Collectors.toList());
         }
         return ResponseEntity.ok(transactions.stream().map(this::toResponse).collect(Collectors.toList()));
     }

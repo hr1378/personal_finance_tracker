@@ -64,7 +64,7 @@ class AuthServiceTest {
 
     @Test
     void register_ShouldCreateUser_WhenEmailNotExists() {
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
         when(jwtUtil.generateToken(anyString(), any(UUID.class))).thenReturn("jwt-token");
@@ -73,11 +73,11 @@ class AuthServiceTest {
 
         assertNotNull(response);
         assertEquals("jwt-token", response.getToken());
-        assertEquals(testUser.getId(), response.getUserId());
+        assertEquals(testUser.getId().toString(), response.getUserId());
         assertEquals(testUser.getEmail(), response.getEmail());
         assertEquals(testUser.getPreferredCurrency(), response.getPreferredCurrency());
 
-        verify(userRepository).findByEmail("test@example.com");
+        verify(userRepository).existsByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
         verify(userRepository).save(any(User.class));
         verify(jwtUtil).generateToken(testUser.getEmail(), testUser.getId());
@@ -85,11 +85,11 @@ class AuthServiceTest {
 
     @Test
     void register_ShouldThrowException_WhenEmailExists() {
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
         assertThrows(RuntimeException.class, () -> authService.register(registerRequest));
 
-        verify(userRepository).findByEmail("test@example.com");
+        verify(userRepository).existsByEmail("test@example.com");
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -103,7 +103,7 @@ class AuthServiceTest {
 
         assertNotNull(response);
         assertEquals("jwt-token", response.getToken());
-        assertEquals(testUser.getId(), response.getUserId());
+        assertEquals(testUser.getId().toString(), response.getUserId());
 
         verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).matches("password123", "encodedPassword");

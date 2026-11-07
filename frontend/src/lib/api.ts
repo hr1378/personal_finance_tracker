@@ -5,13 +5,22 @@ import type {
   Budget,
   BudgetRequest,
   Debt,
-  DebtRequest
+  DebtRequest,
+  Account,
+  AccountRequest,
+  Card,
+  CardRequest,
+  ChatMessage,
+  ChatResponse
 } from '../types/finance'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const TRANSACTION_API_URL = `${API_BASE_URL}/transactions`
 const BUDGET_API_URL = `${API_BASE_URL}/budgets`
 const DEBT_API_URL = `${API_BASE_URL}/debts`
+const ACCOUNTS_API_URL = `${API_BASE_URL}/accounts`
+const CARDS_API_URL = `${API_BASE_URL}/cards`
+const CHAT_API_URL = `${API_BASE_URL}/chat`
 
 // Helper to get auth headers
 function getAuthHeaders() {
@@ -51,10 +60,12 @@ interface BackendDebt {
 export const api = {
   // ==================== TRANSACTIONS ====================
   // Get all transactions
-  async getTransactions(userId?: string, type?: 'INCOME' | 'EXPENSE'): Promise<Transaction[]> {
+  async getTransactions(userId?: string, type?: 'INCOME' | 'EXPENSE', accountId?: string, cardId?: string): Promise<Transaction[]> {
     const params = new URLSearchParams()
     if (userId) params.append('userId', userId)
     if (type) params.append('type', type)
+    if (accountId) params.append('accountId', accountId)
+    if (cardId) params.append('cardId', cardId)
 
     const response = await fetch(`${TRANSACTION_API_URL}?${params}`, {
       headers: getAuthHeaders()
@@ -294,5 +305,126 @@ export const api = {
       headers: getAuthHeaders()
     })
     if (!response.ok) throw new Error('Failed to delete debt')
+  },
+
+  // ==================== ACCOUNTS ====================
+  // Get accounts by user
+  async getAccounts(userId: string): Promise<Account[]> {
+    const response = await fetch(`${ACCOUNTS_API_URL}/user/${userId}`, {
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to fetch accounts')
+    return response.json()
+  },
+
+  // Get account by ID
+  async getAccountById(id: string): Promise<Account> {
+    const response = await fetch(`${ACCOUNTS_API_URL}/${id}`, {
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to fetch account')
+    return response.json()
+  },
+
+  // Create account
+  async createAccount(data: AccountRequest): Promise<Account> {
+    const response = await fetch(ACCOUNTS_API_URL, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to create account')
+    return response.json()
+  },
+
+  // Update account
+  async updateAccount(id: string, data: AccountRequest): Promise<Account> {
+    const response = await fetch(`${ACCOUNTS_API_URL}/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to update account')
+    return response.json()
+  },
+
+  // Delete account
+  async deleteAccount(id: string): Promise<void> {
+    const response = await fetch(`${ACCOUNTS_API_URL}/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to delete account')
+  },
+
+  // ==================== CARDS ====================
+  // Get cards by user
+  async getCards(userId: string): Promise<Card[]> {
+    const response = await fetch(`${CARDS_API_URL}/user/${userId}`, {
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to fetch cards')
+    return response.json()
+  },
+
+  // Get cards by account
+  async getCardsByAccount(accountId: string): Promise<Card[]> {
+    const response = await fetch(`${CARDS_API_URL}/account/${accountId}`, {
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to fetch cards')
+    return response.json()
+  },
+
+  // Get card by ID
+  async getCardById(id: string): Promise<Card> {
+    const response = await fetch(`${CARDS_API_URL}/${id}`, {
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to fetch card')
+    return response.json()
+  },
+
+  // Create card
+  async createCard(data: CardRequest): Promise<Card> {
+    const response = await fetch(CARDS_API_URL, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to create card')
+    return response.json()
+  },
+
+  // Update card
+  async updateCard(id: string, data: CardRequest): Promise<Card> {
+    const response = await fetch(`${CARDS_API_URL}/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to update card')
+    return response.json()
+  },
+
+  // Delete card
+  async deleteCard(id: string): Promise<void> {
+    const response = await fetch(`${CARDS_API_URL}/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    if (!response.ok) throw new Error('Failed to delete card')
+  },
+
+  // ==================== CHAT ====================
+  // Send a chat message to the AI assistant
+  async sendChatMessage(message: string, includeFinanceData: boolean, history?: ChatMessage[]): Promise<ChatResponse> {
+    const response = await fetch(CHAT_API_URL, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ message, includeFinanceData, history })
+    })
+    if (!response.ok) throw new Error('Failed to get chat response')
+    return response.json()
   }
 }

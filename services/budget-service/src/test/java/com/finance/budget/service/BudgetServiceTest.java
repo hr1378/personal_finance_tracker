@@ -171,6 +171,7 @@ class BudgetServiceTest {
     void deleteBudget_ShouldDelete_WhenUserOwnsIt() {
         UserContextFilter.currentUserId.set(testUserId);
 
+        when(budgetRepository.findById(testBudget.getId())).thenReturn(Optional.of(testBudget));
         when(budgetRepository.existsById(testBudget.getId())).thenReturn(true);
         doNothing().when(budgetRepository).deleteById(testBudget.getId());
 

@@ -5,7 +5,9 @@ import { Transactions } from './screens/Transactions'
 import { Analytics } from './screens/Analytics'
 import { Budgets } from './screens/Budgets'
 import { Debts } from './screens/Debts'
+import { Accounts } from './screens/Accounts'
 import { AddTransactionForm } from './components/AddTransactionForm'
+import { ChatWidget } from './components/ChatWidget'
 import { PageHeader } from './components/layout/PageHeader'
 import { toast } from 'sonner'
 import { useFinanceStore } from './store/useFinanceStore'
@@ -18,13 +20,16 @@ function App() {
     summary,
     budgets,
     debts,
+    accounts,
+    cards,
     isLoading,
     error,
     fetchTransactions,
     fetchSummary,
     fetchBudgets,
     fetchDebts,
-    loadDemoData,
+    fetchAccounts,
+    fetchCards,
     addTransaction,
     deleteTransaction
   } = useFinanceStore()
@@ -44,8 +49,10 @@ function App() {
       fetchSummary()
       fetchBudgets(user.id)
       fetchDebts(user.id)
+      fetchAccounts(user.id)
+      fetchCards(user.id)
     }
-  }, [isAuthenticated, user, fetchTransactions, fetchSummary, fetchBudgets, fetchDebts])
+  }, [isAuthenticated, user, fetchTransactions, fetchSummary, fetchBudgets, fetchDebts, fetchAccounts, fetchCards])
 
   const getFilteredTransactions = () => {
     if (filter === 'ALL') return transactions
@@ -54,7 +61,7 @@ function App() {
 
   const filteredTransactions = getFilteredTransactions()
 
-  const handleSubmit = async (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string; date: string; description?: string }) => {
+  const handleSubmit = async (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string; date: string; description?: string; accountId?: string; cardId?: string }) => {
     if (!data.amount || !data.category || !data.date) {
       toast.error('Please fill in all required fields')
       return
@@ -68,7 +75,9 @@ function App() {
         amount: data.amount,
         category: data.category,
         date: data.date,
-        description: data.description
+        description: data.description,
+        accountId: data.accountId || undefined,
+        cardId: data.cardId || undefined
       })
       toast.success('Transaction added successfully')
       setShowAddForm(false)
@@ -93,25 +102,26 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#ffffff' }}>
+    <div className="min-h-screen flex gradient-bg relative overflow-hidden">
       <Sidebar
         currentView={currentView}
         onViewChange={setCurrentView}
         totalTransactions={transactions.length}
         totalBudgets={budgets.length}
         totalDebts={debts.length}
+        totalAccounts={accounts.length + cards.length}
       />
 
-      <main className="flex-1 lg:ml-64 p-6 lg:p-8 overflow-auto">
+      <main className="flex-1 lg:ml-64 p-6 lg:p-8 overflow-auto relative z-10">
         {isLoading && (
           <div className="text-center py-8">
-            <p className="font-bold uppercase tracking-wider">Loading...</p>
+            <p className="font-bold uppercase tracking-wider text-slate-400">Loading...</p>
           </div>
         )}
-        
+
         {error && (
           <div className="text-center py-8">
-            <p className="font-bold uppercase tracking-wider" style={{ color: '#ff3b30' }}>Error: {error}</p>
+            <p className="font-bold uppercase tracking-wider text-rose-400">Error: {error}</p>
           </div>
         )}
 
@@ -122,20 +132,10 @@ function App() {
               subtitle="Your financial picture at a glance"
               actions={
                 <>
-                  {currentView === 'overview' && transactions.length === 0 && budgets.length === 0 && debts.length === 0 && (
-                    <button
-                      onClick={() => loadDemoData(user?.id)}
-                      className="px-4 py-2 brutal-border brutal-shadow-sm hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all font-bold uppercase tracking-wider"
-                      style={{ backgroundColor: '#34c759', color: '#000000', borderColor: '#000000' }}
-                    >
-                      Load Demo Data
-                    </button>
-                  )}
                   <select
                     value={timeFilter}
                     onChange={(e) => setTimeFilter(e.target.value as 'all' | 'month' | 'year')}
-                    className="px-4 py-2 brutal-border brutal-shadow-sm text-sm font-bold uppercase tracking-wider focus:outline-none"
-                    style={{ backgroundColor: '#f4f4f0', color: '#000000', borderColor: '#000000' }}
+                    className="px-4 py-2 glass text-sm font-bold uppercase tracking-wider focus:outline-none text-white rounded-lg hover:bg-white/10 transition-all"
                   >
                     <option value="all">All Time</option>
                     <option value="month">This Month</option>
@@ -143,8 +143,7 @@ function App() {
                   </select>
                   <button
                     onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-4 py-2 brutal-border brutal-shadow-sm hover:brutal-shadow hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all font-bold uppercase tracking-wider"
-                    style={{ backgroundColor: '#ff3b30', color: '#ffffff', borderColor: '#000000' }}
+                    className="px-4 py-2 glass hover:bg-white/10 transition-all font-bold uppercase tracking-wider text-white rounded-lg"
                   >
                     + Add Transaction
                   </button>
@@ -157,6 +156,8 @@ function App() {
               onClose={() => setShowAddForm(false)}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
+              accounts={accounts}
+              cards={cards}
             />
 
             {currentView === 'overview' && (
@@ -174,6 +175,8 @@ function App() {
                 filter={filter}
                 onFilterChange={setFilter}
                 onDelete={handleDelete}
+                accounts={accounts}
+                cards={cards}
               />
             )}
 
@@ -188,9 +191,14 @@ function App() {
             {currentView === 'debts' && (
               <Debts debts={debts} />
             )}
+
+            {currentView === 'accounts' && (
+              <Accounts />
+            )}
           </>
         )}
       </main>
+      <ChatWidget />
     </div>
   )
 }

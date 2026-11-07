@@ -89,6 +89,12 @@ mvn test -Dtest=*IntegrationTest
    - `DashboardServiceTest` - Summary calculations
    - `DashboardServiceIntegrationTest` - Integration with other services
 
+6. **Accounts Service**
+   - `AccountServiceTest` - Account CRUD, ownership checks, card unlinking on delete
+   - `CardServiceTest` - Card CRUD, account association, ownership checks
+   - `AccountControllerTest` / `CardControllerTest` - API endpoints, validation
+   - `AccountsServiceIntegrationTest` - Database operations with Testcontainers + Flyway
+
 6. **API Gateway**
    - `JwtAuthenticationFilterTest` - JWT validation and routing
 
@@ -128,10 +134,13 @@ npm test -- --ui
 
 ### Test Components
 
-1. **AddTransactionForm.test.tsx** - Form validation, submission, reset
+1. **AddTransactionForm.test.tsx** - Form validation, submission, reset, account/card selectors
 2. **Sidebar.test.tsx** - Navigation, view switching, counts display
 3. **api.test.ts** - API client methods, error handling, data transformation
-4. **useFinanceStore.test.ts** - State management, actions, error handling
+4. **Accounts.test.tsx** - Accounts screen rendering, account/card CRUD interactions
+5. **App.test.tsx** - App rendering and auth gating
+6. **useFinanceStore.test.ts** - State management, actions, error handling
+7. **ChatWidget.test.tsx** - Chat panel open/close, permission toggle, message send, error state
 
 ### End-to-End Tests
 
@@ -141,7 +150,8 @@ E2E tests use Playwright to test complete user flows in a real browser.
 
 **Coverage**:
 - Authentication flow (register, login, logout)
-- Transaction management (add, delete, filter)
+- Transaction management (add, delete, filter, account/card linking)
+- Accounts & cards management (add, edit, delete accounts and cards)
 - Budget management (add, update, delete)
 - Debt management (add, update, delete, payments)
 
@@ -200,6 +210,12 @@ npx playwright test --debug
    - Delete debt
    - View debt progress
 
+5. **accounts-flow.spec.ts**
+   - Add new bank account
+   - Add new card
+   - Link a transaction to an account/card
+   - Delete an account
+
 ## CI/CD Integration
 
 ### GitHub Actions CI Pipeline
@@ -250,6 +266,7 @@ cd services/transaction-service && mvn test
 cd services/budget-service && mvn test
 cd services/debt-service && mvn test
 cd services/dashboard-service && mvn test
+cd services/accounts-service && mvn test
 
 # Backend integration tests (requires Docker)
 cd services/auth-service && mvn test -Dtest=*IntegrationTest
@@ -257,6 +274,7 @@ cd services/transaction-service && mvn test -Dtest=*IntegrationTest
 cd services/budget-service && mvn test -Dtest=*IntegrationTest
 cd services/debt-service && mvn test -Dtest=*IntegrationTest
 cd services/dashboard-service && mvn test -Dtest=*IntegrationTest
+cd services/accounts-service && mvn test -Dtest=*IntegrationTest
 
 # Frontend unit tests
 cd frontend && npm test
@@ -271,6 +289,29 @@ cd frontend && npm run test:e2e
 - **Backend Integration Tests**: Critical paths covered
 - **Frontend Unit Tests**: >70% coverage
 - **E2E Tests**: All major user flows covered
+
+## Monitoring Verification
+
+The stack includes Prometheus, Grafana, Elasticsearch, Kibana, and Filebeat.
+
+**Verify metrics pipeline**:
+```bash
+# All scrape targets should show up=1
+curl -s http://localhost:9090/api/v1/targets | python3 -m json.tool | grep -c '"health": "up"'
+
+# Prometheus endpoint exposed by each service
+curl -s http://localhost:8086/actuator/prometheus | head -5
+```
+
+**Verify log pipeline**:
+```bash
+# Elasticsearch should have a finance-logs-* index with documents
+curl -s 'http://localhost:9200/_cat/indices?v' | grep finance-logs
+curl -s 'http://localhost:9200/finance-logs-*/_count'
+```
+
+**UIs**: Grafana at http://localhost:3001 (admin / `GRAFANA_ADMIN_PASSWORD`, default `admin`),
+Kibana at http://localhost:5601, Prometheus at http://localhost:9090.
 
 ## Best Practices
 
@@ -306,6 +347,11 @@ If integration tests fail locally:
 1. Ensure Docker is running: `docker ps`
 2. Check Testcontainers logs for database startup issues
 3. Verify PostgreSQL container can be pulled: `docker pull postgres:16`
+4. On Docker Desktop for Mac, Testcontainers may fail to detect Docker or
+   negotiate the API version. Workaround:
+   ```bash
+   DOCKER_HOST=unix://$HOME/.docker/run/docker.sock mvn test -Dtest=*IntegrationTest -Dapi.version=1.44
+   ```
 
 ### Frontend Tests Fail
 

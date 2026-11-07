@@ -205,4 +205,56 @@ class TransactionServiceTest {
 
         assertThrows(SecurityException.class, () -> transactionService.getSummary(otherUserId));
     }
+
+    @Test
+    void createTransaction_ShouldPersistAccountAndCardIds_WhenProvided() {
+        UserContextFilter.currentUserId.set(testUserId);
+
+        UUID accountId = UUID.randomUUID();
+        UUID cardId = UUID.randomUUID();
+
+        TransactionRequest request = new TransactionRequest();
+        request.setUserId(testUserId);
+        request.setType(TransactionType.EXPENSE);
+        request.setAmount(new BigDecimal("50.00"));
+        request.setCategory("Groceries");
+        request.setDate(LocalDate.now());
+        request.setAccountId(accountId);
+        request.setCardId(cardId);
+
+        Category expenseCategory = new Category();
+        expenseCategory.setId(UUID.randomUUID());
+        expenseCategory.setName("Groceries");
+        expenseCategory.setType(TransactionType.EXPENSE);
+
+        when(categoryRepository.findByName("Groceries")).thenReturn(Optional.of(expenseCategory));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Transaction result = transactionService.createTransaction(request);
+
+        assertEquals(accountId, result.getAccountId());
+        assertEquals(cardId, result.getCardId());
+        verify(transactionRepository).save(argThat(t ->
+                accountId.equals(t.getAccountId()) && cardId.equals(t.getCardId())));
+    }
+
+    @Test
+    void createTransaction_ShouldAllowNullAccountAndCardIds() {
+        UserContextFilter.currentUserId.set(testUserId);
+
+        TransactionRequest request = new TransactionRequest();
+        request.setUserId(testUserId);
+        request.setType(TransactionType.INCOME);
+        request.setAmount(new BigDecimal("100.00"));
+        request.setCategory("Salary");
+        request.setDate(LocalDate.now());
+
+        when(categoryRepository.findByName("Salary")).thenReturn(Optional.of(testCategory));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Transaction result = transactionService.createTransaction(request);
+
+        assertNull(result.getAccountId());
+        assertNull(result.getCardId());
+    }
 }

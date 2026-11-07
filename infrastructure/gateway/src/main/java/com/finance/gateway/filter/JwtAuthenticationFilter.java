@@ -61,11 +61,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<Object
                 String userId = claims.get("userId", String.class);
 
                 // Add user ID to request headers for downstream services
-                exchange.getRequest().mutate()
+                var mutatedRequest = exchange.getRequest().mutate()
                         .header("X-User-Id", userId)
                         .build();
 
-                return chain.filter(exchange);
+                return chain.filter(exchange.mutate().request(mutatedRequest).build());
             } catch (Exception e) {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
