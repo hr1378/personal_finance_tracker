@@ -17,6 +17,7 @@ The application consists of:
   - Dashboard Service (port 8085)
   - Accounts Service (port 8086)
   - Chatbot Service (port 8087)
+  - Agent Service (port 8088) - LangGraph/LangChain finance agent
   - API Gateway (port 8080)
 
 ## Security Features
@@ -143,6 +144,16 @@ npm run dev
 #### Chatbot Service (requires JWT)
 - `POST /api/chat` - Send a chat message `{ message, includeFinanceData, history? }`
 - `GET /api/chat/status` - Which LLM provider is configured (`openai`, `anthropic`, `gemini`, or `none`)
+
+#### Agent Service (requires JWT, Python/LangGraph)
+- `POST /api/agent/chat` - Agent chat with tool use: `{ message, history? }` -> `{ reply, provider, actions_taken }`
+- `GET /api/agent/status` - Configured LLM provider
+- `GET/POST /api/agent/goals`, `POST /api/agent/goals/{id}/contribute`, `GET /api/agent/goals/{id}/plan`, `DELETE /api/agent/goals/{id}` - Savings goals (stored in Postgres `agent` schema)
+- `GET /api/agent/debts/payoff-plan?extra_monthly_payment=N` - Avalanche vs snowball simulation analyzing all debts and payments
+
+Agent tools: add_transaction, create_budget, create_debt, record_debt_payment,
+create_savings_goal, contribute_to_goal, get_savings_plan, get_payoff_plan,
+get_finance_summary, list_savings_goals.
 
 The chatbot auto-detects its provider from environment variables in this order:
 `OPENAI_API_KEY` → `ANTHROPIC_API_KEY` → `GEMINI_API_KEY` (see `.env.example`).

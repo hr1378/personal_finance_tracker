@@ -28,12 +28,18 @@ export function ChatWidget() {
     setError(null)
 
     try {
-      const response = await api.sendChatMessage(
-        text,
-        shareFinanceData,
-        messages.slice(-20)
-      )
-      setMessages([...updatedMessages, { role: 'assistant', content: response.reply }])
+      // Permission granted -> agent (can act on finance data); otherwise plain chat
+      if (shareFinanceData) {
+        const response = await api.sendAgentMessage(text, messages.slice(-20))
+        setMessages([...updatedMessages, {
+          role: 'assistant',
+          content: response.reply,
+          actions: response.actions_taken
+        }])
+      } else {
+        const response = await api.sendChatMessage(text, false, messages.slice(-20))
+        setMessages([...updatedMessages, { role: 'assistant', content: response.reply }])
+      }
     } catch {
       setError('Failed to get a response. Check that an AI API key is configured.')
     } finally {
@@ -74,7 +80,7 @@ export function ChatWidget() {
             />
             <ShieldCheck className="w-3.5 h-3.5 text-green-400" />
             <span className="text-xs text-white/70 font-medium">
-              Let assistant see my finance data
+              Enable finance agent (can view &amp; update my data)
             </span>
           </label>
 
@@ -99,6 +105,15 @@ export function ChatWidget() {
                   }`}
                 >
                   {msg.content}
+                  {msg.actions && msg.actions.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-white/10 space-y-1">
+                      {msg.actions.map((a, j) => (
+                        <div key={j} className="text-xs text-green-300 flex items-start gap-1">
+                          <span>✓</span><span>{a}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

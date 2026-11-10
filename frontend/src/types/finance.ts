@@ -127,6 +127,7 @@ export interface CardRequest {
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  actions?: string[]
 }
 
 export interface ChatRequest {
@@ -138,4 +139,10 @@ export interface ChatRequest {
 export interface ChatResponse {
   reply: string
   provider: string
+}
+
+export interface AgentChatResponse {
+  reply: string
+  provider: string
+  actions_taken: string[]
 }

@@ -11,7 +11,8 @@ import type {
   Card,
   CardRequest,
   ChatMessage,
-  ChatResponse
+  ChatResponse,
+  AgentChatResponse
 } from '../types/finance'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -21,6 +22,7 @@ const DEBT_API_URL = `${API_BASE_URL}/debts`
 const ACCOUNTS_API_URL = `${API_BASE_URL}/accounts`
 const CARDS_API_URL = `${API_BASE_URL}/cards`
 const CHAT_API_URL = `${API_BASE_URL}/chat`
+const AGENT_API_URL = `${API_BASE_URL}/agent`
 
 // Helper to get auth headers
 function getAuthHeaders() {
@@ -425,6 +427,17 @@ export const api = {
       body: JSON.stringify({ message, includeFinanceData, history })
     })
     if (!response.ok) throw new Error('Failed to get chat response')
+    return response.json()
+  },
+
+  // Agent chat - can perform actions (add transactions, budgets, debts, goals)
+  async sendAgentMessage(message: string, history?: ChatMessage[]): Promise<AgentChatResponse> {
+    const response = await fetch(`${AGENT_API_URL}/chat`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ message, history })
+    })
+    if (!response.ok) throw new Error('Failed to get agent response')
     return response.json()
   }
 }

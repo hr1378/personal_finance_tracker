@@ -313,6 +313,32 @@ curl -s 'http://localhost:9200/finance-logs-*/_count'
 **UIs**: Grafana at http://localhost:3001 (admin / `GRAFANA_ADMIN_PASSWORD`, default `admin`),
 Kibana at http://localhost:5601, Prometheus at http://localhost:9090.
 
+## Agent Service (Python/LangGraph)
+
+`services/agent-service` is a FastAPI app (port 8088) exposing `/api/agent/**`.
+
+**Unit tests** (pure payoff simulation, no services needed):
+```bash
+cd services/agent-service
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pytest tests/ -v
+```
+
+**Smoke tests** (requires running stack + JWT):
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"test@example.com","password":"password123"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+
+curl http://localhost:8080/api/agent/status -H "Authorization: Bearer $TOKEN"
+curl -X POST http://localhost:8080/api/agent/goals -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"name":"Trip","targetAmount":3000}'
+curl "http://localhost:8080/api/agent/debts/payoff-plan" -H "Authorization: Bearer $TOKEN"
+```
+
+The chat agent (`POST /api/agent/chat`) requires one of `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` — same env vars as chatbot-service.
+
 ## Best Practices
 
 ### Backend Testing

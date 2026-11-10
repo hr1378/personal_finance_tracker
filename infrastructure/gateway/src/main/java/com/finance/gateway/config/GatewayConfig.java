@@ -40,6 +40,9 @@ public class GatewayConfig {
                 .route("chatbot-service", r -> r.path("/api/chat/**")
                         .filters(f -> f.filter(jwtFilter.apply(new Object())))
                         .uri(env.getProperty("CHATBOT_SERVICE_URL", "http://localhost:8087")))
+                .route("agent-service", r -> r.path("/api/agent/**")
+                        .filters(f -> f.filter(jwtFilter.apply(new Object())))
+                        .uri(env.getProperty("AGENT_SERVICE_URL", "http://localhost:8088")))
                 .build();
     }
 }

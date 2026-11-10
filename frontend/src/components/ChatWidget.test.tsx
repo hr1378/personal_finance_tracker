@@ -5,7 +5,8 @@ import { api } from '../lib/api'
 
 vi.mock('../lib/api', () => ({
   api: {
-    sendChatMessage: vi.fn()
+    sendChatMessage: vi.fn(),
+    sendAgentMessage: vi.fn()
   }
 }))
 
@@ -29,26 +30,31 @@ describe('ChatWidget', () => {
   it('shows the finance-data permission toggle', () => {
     render(<ChatWidget />)
     fireEvent.click(screen.getByLabelText('Open finance assistant'))
-    expect(screen.getByText('Let assistant see my finance data')).toBeInTheDocument()
+    expect(screen.getByText(/finance agent/)).toBeInTheDocument()
   })
 
-  it('sends a message without finance data by default', async () => {
+  it('uses plain chat (no finance data) when permission is off', async () => {
     vi.mocked(api.sendChatMessage).mockResolvedValue({ reply: 'Hello!', provider: 'openai' })
     render(<ChatWidget />)
     fireEvent.click(screen.getByLabelText('Open finance assistant'))
     fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'hi' } })
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
     await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalledWith('hi', false, []))
+    expect(api.sendAgentMessage).not.toHaveBeenCalled()
   })
 
-  it('includes finance data when permission is granted', async () => {
-    vi.mocked(api.sendChatMessage).mockResolvedValue({ reply: 'ok', provider: 'openai' })
+  it('uses the agent when permission is granted and renders actions', async () => {
+    vi.mocked(api.sendAgentMessage).mockResolvedValue({
+      reply: 'Done!', provider: 'openai',
+      actions_taken: ['Transaction created: EXPENSE $45.00']
+    })
     render(<ChatWidget />)
     fireEvent.click(screen.getByLabelText('Open finance assistant'))
     fireEvent.click(screen.getByRole('checkbox'))
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'my balance?' } })
-fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
-    await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalledWith('my balance?', true, []))
+    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'add coffee expense' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+    await waitFor(() => expect(api.sendAgentMessage).toHaveBeenCalledWith('add coffee expense', []))
+    await waitFor(() => expect(screen.getByText(/Transaction created/)).toBeInTheDocument())
   })
 
   it('displays an error when the API fails', async () => {
@@ -56,7 +62,7 @@ fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
     render(<ChatWidget />)
     fireEvent.click(screen.getByLabelText('Open finance assistant'))
     fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'hi' } })
-fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
     await waitFor(() => expect(screen.getByText(/Failed to get a response/)).toBeInTheDocument())
   })
 })
