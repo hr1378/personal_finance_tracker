@@ -9,6 +9,7 @@ import { Accounts } from './screens/Accounts'
 import { AddTransactionForm } from './components/AddTransactionForm'
 import { ChatWidget } from './components/ChatWidget'
 import { PageHeader } from './components/layout/PageHeader'
+import { StartPage } from './screens/StartPage'
 import { toast } from 'sonner'
 import { useFinanceStore } from './store/useFinanceStore'
 import { useAuth } from './context/AuthContext'
@@ -34,7 +35,7 @@ function App() {
     deleteTransaction
   } = useFinanceStore()
 
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isGuest, logout, exitGuest } = useAuth()
 
   const [currentView, setCurrentView] = useState<View>('overview')
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
@@ -45,14 +46,18 @@ function App() {
   // Fetch data on mount and when auth state changes
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      fetchTransactions()
-      fetchSummary()
+      fetchTransactions(user.id)
+      fetchSummary(user.id)
       fetchBudgets(user.id)
       fetchDebts(user.id)
       fetchAccounts(user.id)
       fetchCards(user.id)
     }
   }, [isAuthenticated, user, fetchTransactions, fetchSummary, fetchBudgets, fetchDebts, fetchAccounts, fetchCards])
+
+  if (!isAuthenticated && !isGuest) {
+    return <StartPage />
+  }
 
   const getFilteredTransactions = () => {
     if (filter === 'ALL') return transactions
@@ -113,6 +118,18 @@ function App() {
       />
 
       <main className="flex-1 lg:ml-64 p-6 lg:p-8 overflow-auto relative z-10">
+        {isGuest && (
+          <div className="mb-6 glass rounded-xl p-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-white/80">You're browsing as a guest. Log in to load your financial data.</p>
+            <button
+              onClick={exitGuest}
+              className="px-4 py-2 glass hover:bg-white/10 transition-all font-bold uppercase tracking-wider text-white rounded-lg whitespace-nowrap"
+            >
+              Log in
+            </button>
+          </div>
+        )}
+
         {isLoading && (
           <div className="text-center py-8">
             <p className="font-bold uppercase tracking-wider text-slate-400">Loading...</p>
@@ -132,21 +149,36 @@ function App() {
               subtitle="Your financial picture at a glance"
               actions={
                 <>
-                  <select
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value as 'all' | 'month' | 'year')}
-                    className="px-4 py-2 glass text-sm font-bold uppercase tracking-wider focus:outline-none text-white rounded-lg hover:bg-white/10 transition-all"
-                  >
-                    <option value="all">All Time</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                  </select>
-                  <button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-4 py-2 glass hover:bg-white/10 transition-all font-bold uppercase tracking-wider text-white rounded-lg"
-                  >
-                    + Add Transaction
-                  </button>
+                  {isAuthenticated && user && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-white/70">{user.email}</span>
+                      <button
+                        onClick={logout}
+                        className="px-4 py-2 glass hover:bg-white/10 transition-all font-bold uppercase tracking-wider text-white rounded-lg"
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  )}
+                  {isAuthenticated && (
+                    <>
+                      <select
+                        value={timeFilter}
+                        onChange={(e) => setTimeFilter(e.target.value as 'all' | 'month' | 'year')}
+                        className="px-4 py-2 glass text-sm font-bold uppercase tracking-wider focus:outline-none text-white rounded-lg hover:bg-white/10 transition-all"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                      </select>
+                      <button
+                        onClick={() => setShowAddForm(!showAddForm)}
+                        className="px-4 py-2 glass hover:bg-white/10 transition-all font-bold uppercase tracking-wider text-white rounded-lg"
+                      >
+                        + Add Transaction
+                      </button>
+                    </>
+                  )}
                 </>
               }
             />

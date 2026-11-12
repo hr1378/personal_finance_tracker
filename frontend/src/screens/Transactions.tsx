@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Trash2, ArrowUpRight, ArrowDownRight, Landmark, CreditCard } from 'lucide-react'
 import { Card } from '../components/ui/Card'
@@ -25,9 +26,16 @@ interface TransactionsProps {
 }
 
 export function Transactions({ transactions, filter, onFilterChange, onDelete, accounts = [], cards = [] }: TransactionsProps) {
+  const [page, setPage] = useState(1)
+  const pageSize = 50
+
   const displayTransactions = filter === 'ALL'
     ? transactions
     : transactions.filter(t => t.type === filter)
+
+  const pageCount = Math.max(1, Math.ceil(displayTransactions.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const paginatedTransactions = displayTransactions.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   return (
     <Card className="p-6" gradient="none">
@@ -37,7 +45,10 @@ export function Transactions({ transactions, filter, onFilterChange, onDelete, a
           <label className="text-sm font-bold uppercase tracking-wider text-white/70">Filter:</label>
           <select
             value={filter}
-            onChange={(e) => onFilterChange(e.target.value as 'ALL' | 'INCOME' | 'EXPENSE')}
+            onChange={(e) => {
+              onFilterChange(e.target.value as 'ALL' | 'INCOME' | 'EXPENSE')
+              setPage(1)
+            }}
             className="px-4 py-2 glass text-sm font-bold uppercase tracking-wider text-white focus:outline-none rounded-xl hover:bg-white/20 transition-all"
           >
             <option value="ALL">All</option>
@@ -69,7 +80,7 @@ export function Transactions({ transactions, filter, onFilterChange, onDelete, a
               </tr>
             </thead>
             <tbody>
-              {displayTransactions.map((transaction) => (
+              {paginatedTransactions.map((transaction) => (
                 <tr key={transaction.id} className="border-b border-white/10 hover:bg-white/10 transition-colors">
                   <td className="py-4 px-4 text-sm text-white font-bold">{format(parseISO(transaction.date), 'MMM d, yyyy')}</td>
                   <td className="py-4 px-4">
@@ -124,6 +135,34 @@ export function Transactions({ transactions, filter, onFilterChange, onDelete, a
               ))}
             </tbody>
           </table>
+          {pageCount > 1 && (
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider text-white/60">
+                Showing {paginatedTransactions.length} of {displayTransactions.length} transactions
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 glass rounded-lg text-xs font-bold uppercase tracking-wider text-white disabled:opacity-40 hover:bg-white/10 transition-colors"
+                >
+                  Prev
+                </button>
+                <span className="text-xs font-bold uppercase tracking-wider text-white/70">
+                  Page {currentPage} of {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage(currentPage + 1)}
+                  disabled={currentPage === pageCount}
+                  className="px-3 py-1.5 glass rounded-lg text-xs font-bold uppercase tracking-wider text-white disabled:opacity-40 hover:bg-white/10 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Card>
