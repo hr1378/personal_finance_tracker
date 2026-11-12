@@ -1,0 +1,40 @@
+# AWS Terraform instructions
+
+These commands deploy the application to AWS using the Terraform configuration in `infrastructure/terraform`.
+
+## Prerequisites
+
+- Terraform 1.6 or newer
+- AWS CLI
+- Python 3
+- An authenticated AWS CLI profile with permission to create and destroy the Terraform resources
+
+The scripts default to AWS profile `terraform-deployer` and region `us-east-1`. Authenticate first if needed:
+
+```bash
+aws login --profile terraform-deployer
+```
+
+You can select a different profile or region by setting `AWS_PROFILE` and `AWS_REGION` before running either command.
+
+## Deploy
+
+From the project root, run:
+
+```bash
+./infrastructure/terraform/deploy.sh
+```
+
+The script checks AWS credentials, writes the configured public Docker image names and `v1` tags into a private, gitignored `terraform.tfvars` file, prompts for an RDS password, then initializes Terraform, shows a plan, and applies it. Review the plan before approving it. When deployment finishes, the script prints the frontend address.
+
+## Destroy
+
+When finished, run:
+
+```bash
+./infrastructure/terraform/destroy.sh
+```
+
+This destroys Terraform-managed AWS resources in the selected account and region. It removes generated Terraform variables and plan files only after Terraform reports that its managed state is empty. The RDS database is deleted without a final snapshot. Keep the same AWS profile and region used for deployment.
+
+AWS charges can accrue while resources exist and may take time to appear in billing. The destroy command only removes resources managed by this Terraform configuration.

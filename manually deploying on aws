@@ -1,0 +1,190 @@
+# Manually deploying on AWS (no Terraform)
+
+This guide describes how to manually create the same learning deployment configured in `infrastructure/terraform`. It uses ECS on one EC2 host, RDS PostgreSQL, and the supporting VPC, IAM, and security resources. It runs the two public Docker Hub images only:
+
+- Frontend: `hatimrangwala/finance-frontend:v1`
+- Transaction service: `hatimrangwala/finance-transaction-service:v1`
+
+The images are ARM64. Use an ARM64 ECS optimized EC2 host (`t4g.micro`) and the ECS optimized Amazon Linux 2023 ARM64 AMI. The host needs a 30 GiB gp3 root disk. The RDS instance is private, single-AZ, PostgreSQL 17.6, class `db.t4g.micro`, with 20 GiB gp3 storage. These resources can incur charges while they exist. A short run can still be billed; check current AWS pricing and your account's Free Tier eligibility.
+
+> AWS Console labels change occasionally. In every console step, confirm the region shown in the top navigation is **US East (N. Virginia), `us-east-1`**. Use the `terraform-deployer` IAM user (or another authorized IAM user) for console access. Do not share passwords or verification codes in chat.
+
+## 1. Record deployment settings
+
+Choose a strong database password and keep it in a password manager. You will enter it in the RDS master password field and the ECS task definition. Use these values throughout:
+
+| Setting | Value |
+| --- | --- |
+| Region | `us-east-1` |
+| Project name | `finance` |
+| VPC CIDR | `10.20.0.0/16` |
+| Public subnet A | `10.20.1.0/24` |
+| Public subnet B | `10.20.2.0/24` |
+| Private DB subnet A | `10.20.11.0/24` |
+| Private DB subnet B | `10.20.12.0/24` |
+| ECS cluster | `finance-cluster` |
+| ECS service | `finance-application` |
+| ECS task family | `finance-application` |
+| EC2 instance | `finance-ecs-instance` |
+| RDS identifier | `finance-postgres` |
+| Database | `finance_tracker` |
+| DB username | `finance_user` |
+| Frontend image | `hatimrangwala/finance-frontend:v1` |
+| Transaction image | `hatimrangwala/finance-transaction-service:v1` |
+
+Use two available AZs in `us-east-1`; the AZ letters shown in your account may differ. Create each subnet in one of those AZs. Do not make the RDS database publicly accessible.
+
+## 2. Create the VPC and networking
+
+1. Open **VPC → Your VPCs → Create VPC**. Choose **VPC only**. Name it `finance-vpc`, IPv4 CIDR `10.20.0.0/16`, and enable DNS resolution and DNS hostnames. Create it and record its VPC ID.
+2. Open **Subnets → Create subnet**. Select `finance-vpc` and create four subnets:
+   - `finance-public-a`: `10.20.1.0/24`, first selected AZ.
+   - `finance-public-b`: `10.20.2.0/24`, second selected AZ.
+   - `finance-private-a`: `10.20.11.0/24`, first selected AZ.
+   - `finance-private-b`: `10.20.12.0/24`, second selected AZ.
+3. Select each public subnet, choose **Actions → Edit subnet settings**, and enable **Auto-assign public IPv4 address**. Leave this off for both private subnets.
+4. Open **Internet gateways → Create internet gateway**. Name it `finance-igw`; create it, then **Actions → Attach to a VPC** and attach to `finance-vpc`.
+5. Open **Route tables → Create route table**. Name it `finance-public-rt`, choose `finance-vpc`, and create it.
+6. Select `finance-public-rt`, open **Routes → Edit routes → Add route**. Destination `0.0.0.0/0`, target the `finance-igw`; save.
+7. Open **Subnet associations → Edit subnet associations** and associate both public subnets with `finance-public-rt`. Do not associate the private subnets with this public route table. No NAT Gateway is needed; the database remains private and the EC2 host is public for image pulls and browser access.
+
+## 3. Create security groups
+
+Open **VPC → Security groups → Create security group**. Make both groups in `finance-vpc`.
+
+### `finance-application`
+
+- Description: `HTTP access to the frontend container`
+- Inbound rule: HTTP, TCP, port `80`, source `0.0.0.0/0`.
+- Outbound: allow all traffic (`0.0.0.0/0`, all protocols). This allows Docker Hub pulls and database connections.
+- Do not add SSH inbound access.
+
+### `finance-database`
+
+- Description: `RDS PostgreSQL access from the ECS host`
+- Inbound rule: PostgreSQL, TCP, port `5432`, source security group `finance-application` (select the security group, not an IP range).
+- Outbound: allow all traffic.
+
+Record both security group IDs. The application group is intentionally public on port 80 to make the learning frontend reachable. Do not add any inbound database rule from the internet.
+
+## 4. Create the RDS subnet group and database
+
+1. Open **RDS → Subnet groups → Create DB subnet group**. Name `finance-db`, description `Private subnets for finance database`, choose VPC `finance-vpc`, and add `finance-private-a` and `finance-private-b` (in two AZs). Create it.
+2. Open **RDS → Databases → Create database**. Choose **Standard create**, engine **PostgreSQL**, version **17.6** if offered (otherwise select a currently offered PostgreSQL 17 minor version and use that actual version in your notes).
+3. Under templates choose **Dev/Test** or equivalent. Set:
+   - DB instance identifier: `finance-postgres`
+   - Master username: `finance_user`
+   - Master password: the password you recorded; confirm it
+   - DB instance class: burstable class `db.t4g.micro`
+   - Storage: General Purpose SSD (gp3), allocated `20 GiB`; disable storage autoscaling
+   - Availability: single DB instance / Single-AZ
+   - Initial database name: `finance_tracker`
+4. Under connectivity choose VPC `finance-vpc`, DB subnet group `finance-db`, **Public access: No**, and VPC security group `finance-database`. Remove any default security group if selected. Ensure port `5432`.
+5. Under monitoring/backups, disable Enhanced Monitoring and set backup retention to `0` days if the console permits. Do not enable Performance Insights or export logs. In additional configuration, disable deletion protection. Create the database.
+6. Wait until status is **Available**. Open the DB details and copy the endpoint hostname (omit the `:5432` port suffix). Keep it private. The endpoint will be used in the ECS task definition.
+
+The database must remain empty for this deployment. The task settings below disable Flyway and Hibernate schema creation/validation. The service can start without application tables, but API operations that need tables will fail.
+
+## 5. Create the ECS EC2 instance role
+
+1. Open **IAM → Roles → Create role**. Trusted entity type **AWS service**, use case **EC2**.
+2. Attach the AWS managed policy `AmazonEC2ContainerServiceforEC2Role` (service role for ECS container instances). Do not add broad administrator permissions.
+3. Name the role `finance-ecs-instance` and create it.
+4. Open **IAM → Instance profiles** (or the role's summary). If no instance profile was created automatically, create an instance profile named `finance-ecs-instance` and add the role `finance-ecs-instance` to it. EC2 needs the instance profile to register with ECS.
+
+## 6. Create the ECS cluster and EC2 host
+
+1. Open **ECS → Clusters → Create cluster**. Name `finance-cluster`. Select the EC2/instances infrastructure option if prompted; do not select Fargate. Create the cluster.
+2. Open **EC2 → Instances → Launch instances**.
+3. Set name `finance-ecs-instance`. Under AMI, choose the latest **ECS-Optimized Amazon Linux 2023 (AL2023), ARM64** image. Do not choose x86_64; the images only publish ARM64 variants.
+4. Instance type `t4g.micro` (ARM64).
+5. Key pair: proceed without a key pair; SSH is not needed. Under network settings choose `finance-vpc`, a public subnet (`finance-public-a`), enable auto-assign public IP, and select only security group `finance-application`.
+6. Configure storage: root EBS volume `30 GiB`, `gp3`, encrypted, and delete on termination enabled.
+7. Expand **Advanced details**. IAM instance profile: `finance-ecs-instance`. For User data, paste exactly:
+
+   ```bash
+   #!/bin/bash
+   echo ECS_CLUSTER=finance-cluster >> /etc/ecs/ecs.config
+   ```
+
+8. Launch. In **ECS → Clusters → finance-cluster → Infrastructure**, wait for the EC2 container instance to register and show **Active**. If it does not register, check the selected ECS-optimized ARM64 AMI, role/profile, user data, public route, and outbound rules.
+
+## 7. Register the two-container task definition
+
+1. In **ECS → Task definitions → Create new task definition**, choose **Amazon EC2 instances** / EC2 launch type. Use family `finance-application`.
+2. Set network mode to `bridge`, task CPU to `512` units, and task memory to `768` MiB. Do not configure a task execution role; images are public Docker Hub images.
+3. Add container **transaction-service**:
+   - Image URI: `hatimrangwala/finance-transaction-service:v1`
+   - Essential: yes
+   - Port mapping: container port `8080`, host port `0` (dynamic), TCP
+   - Environment variables (enter each name and value exactly):
+     - `SPRING_DATASOURCE_URL` = `jdbc:postgresql://<RDS-ENDPOINT-HOSTNAME>:5432/finance_tracker` (replace the placeholder with the endpoint copied in step 4; do not include angle brackets)
+     - `SPRING_DATASOURCE_USERNAME` = `finance_user`
+     - `SPRING_DATASOURCE_PASSWORD` = the database password chosen above
+     - `SPRING_JPA_HIBERNATE_DDL_AUTO` = `none`
+     - `SPRING_FLYWAY_ENABLED` = `false`
+     - `SERVER_PORT` = `8080`
+     - `MANAGEMENT_HEALTH_KAFKA_ENABLED` = `false`
+     - `KAFKA_BOOTSTRAP_SERVERS` = `localhost:9092`
+   - Container health check command: `CMD-SHELL`, `curl -f http://localhost:8080/actuator/health || exit 1`; interval 30 seconds, timeout 10 seconds, retries 3, start period 60 seconds. If the console exposes the command as separate fields, enter the command and arguments in order.
+   - Stop timeout: 60 seconds if available.
+4. Add container **frontend**:
+   - Image URI: `hatimrangwala/finance-frontend:v1`
+   - Essential: yes
+   - Port mapping: container port `80`, host port `80`, TCP
+   - Link: `transaction-service:gateway` (the frontend's Nginx config proxies `/api` to `gateway:8080`)
+   - Startup dependency: container `transaction-service`, condition `START`
+   - Stop timeout: 30 seconds if available.
+5. Register/create the task definition. Verify its revision is shown as `finance-application:<revision>`.
+
+If the ECS console does not expose the legacy Docker link field, create the task definition with the ECS `RegisterTaskDefinition` API / AWS CLI and include `links: ["transaction-service:gateway"]` for the frontend container. Without this link the frontend's `/api` proxy will not resolve the transaction service. Do not replace either image with another container image.
+
+## 8. Create the ECS service and check the application
+
+1. Open **ECS → Clusters → finance-cluster → Services → Create**.
+2. Compute option/launch type: **EC2**. Choose task family `finance-application` and its latest revision.
+3. Service name `finance-application`; desired tasks `1`.
+4. Do not configure a load balancer, Service Connect, service discovery, autoscaling, or public IP assignment for the task. Use the `bridge` network mode task on the registered EC2 host.
+5. Create the service. Wait for deployment to stabilize and for one task to show **RUNNING**. In the task's container health details, verify `transaction-service` is **HEALTHY**. The frontend may show health **UNKNOWN** because it has no ECS container health check.
+6. Open **EC2 → Instances**, select `finance-ecs-instance`, and copy its Public IPv4 address. In a browser, visit `http://<PUBLIC-IP>/`. Confirm the frontend responds (HTTP 200). Its address is the EC2 public IP, not an RDS endpoint.
+7. To keep the learning run brief, start a timer only after the service is RUNNING and the browser check succeeds. When your chosen viewing time ends, immediately follow the destroy steps below.
+
+## 9. Manually destroy everything, in dependency order
+
+Do not just stop the EC2 instance: RDS, storage, networking, and IAM resources can remain and continue to incur charges. Do not delete the VPC first. Use `us-east-1` and the same AWS account used to create the deployment.
+
+### A. Remove ECS tasks and cluster
+
+1. Open **ECS → Clusters → finance-cluster → Services**. Select `finance-application`, choose **Update service**, set desired tasks to `0`, and update. Wait for running tasks to stop.
+2. Select the service and choose **Delete service**. Confirm and wait until it disappears.
+3. Open **ECS → Task definitions**, select family `finance-application`, deregister every active revision. If the console offers delete, remove deregistered revisions too. A deregistered task definition does not run containers, but clean it up where supported.
+4. Return to **ECS → Clusters**, select `finance-cluster`, and delete it after the service is gone.
+
+### B. Delete the EC2 host and RDS database
+
+5. Open **EC2 → Instances**, select `finance-ecs-instance`, choose **Instance state → Terminate instance**, and confirm. Wait for **Terminated**. With delete-on-termination enabled the root EBS volume is removed automatically.
+6. Check **EC2 → Volumes** for any remaining volume named/tagged `finance-ecs-instance`; delete it only after confirming it belongs to this deployment and is detached. Check **EC2 → Elastic IPs** and release any address allocated for this deployment (the configured host uses an auto-assigned public address and should not have an Elastic IP).
+7. Open **RDS → Databases**, select `finance-postgres`, choose **Actions → Delete**. Turn off deletion protection if prompted; do not create a final snapshot; confirm deletion. Wait until the DB disappears. Check **RDS → Snapshots → Manual** and delete any snapshot you created for this exercise. With backup retention set to zero, no retained automated backup should remain; check the automated backups page as well.
+8. Open **RDS → Subnet groups**, delete `finance-db` after the DB is gone.
+
+### C. Remove IAM and VPC networking
+
+9. Open **IAM → Roles**, select `finance-ecs-instance`. Detach `AmazonEC2ContainerServiceforEC2Role`, remove the role from its instance profile, delete the instance profile `finance-ecs-instance`, then delete the role. If the console presents a different order, remove the profile association before deleting the role.
+10. Open **VPC → Security groups** in `finance-vpc`. Delete `finance-database`, then `finance-application`. Security groups cannot be deleted while referenced by another resource.
+11. In **VPC → Subnets**, delete `finance-private-a`, `finance-private-b`, `finance-public-a`, and `finance-public-b`.
+12. In **VPC → Route tables**, delete `finance-public-rt`. If it is the VPC's main route table, do not delete it; the custom route table created in this guide is not the main table. Remove any remaining route table associations first if prompted.
+13. In **VPC → Internet gateways**, detach `finance-igw` from `finance-vpc`, then delete the gateway. If AWS reports a mapped public address, make sure the EC2 instance is terminated and its public address is released, then retry.
+14. In **VPC → Your VPCs**, delete `finance-vpc` after all attached resources are gone.
+
+### D. Final account checks
+
+15. In region `us-east-1`, verify there is no `finance-application` ECS service or `finance-cluster`, no `finance-ecs-instance` EC2 instance or attached volume, no `finance-postgres` database or snapshots, no `finance-vpc`, and no `finance-ecs-instance` IAM role/profile. Check **EC2 → Elastic IPs** and **RDS → Automated backups** too.
+16. Search the console's global resource search and **Resource Groups / Tag Editor** for resources tagged `Project=personal-finance-tracker` and `ManagedBy=terraform` or named with `finance`. The tags are only a clue; verify ownership before deleting any resource.
+17. Billing data updates with a delay. Destruction prevents ongoing charges for the deleted resources but cannot erase charges accrued while they existed. Verify under **Billing and Cost Management → Bills / Free Tier** later.
+
+## Important limitations
+
+- RDS deletion is permanent here: no final snapshot is created. The database has no application schema because Flyway and Hibernate DDL are disabled.
+- The app uses only the frontend and transaction-service images. Other application components such as Kafka or additional business services are not deployed; related features may not work.
+- The ECS host and database are small, single-instance resources for a brief learning exercise, not a production architecture.
+- Manual console creation is easy to misconfigure. Follow the names, ports, subnet placement, ARM64 architecture, and dependency values exactly. The Terraform scripts in `infrastructure/terraform` are the repeatable alternative.

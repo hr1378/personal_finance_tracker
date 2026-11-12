@@ -1,0 +1,16 @@
+# Copy this file to terraform.tfvars and replace placeholders. Never commit terraform.tfvars.
+
+aws_region            = "us-east-1"
+project_name          = "finance"
+ec2_instance_type     = "t4g.micro"
+frontend_image        = "YOUR_DOCKER_USERNAME/finance-frontend"
+frontend_image_tag    = "main"
+transaction_image     = "YOUR_DOCKER_USERNAME/finance-transaction-service"
+transaction_image_tag = "latest"
+frontend_container_port     = 80
+rds_instance_class   = "db.t4g.micro"
+rds_allocated_storage = 20
+rds_engine_version   = "17.6"
+rds_database_name    = "finance_tracker"
+rds_username         = "finance_user"
+rds_password         = "replace-with-a-secure-password"
