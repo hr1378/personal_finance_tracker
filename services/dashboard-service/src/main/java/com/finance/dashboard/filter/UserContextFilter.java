@@ -11,27 +11,35 @@ import java.util.UUID;
 public class UserContextFilter implements Filter {
 
     public static final ThreadLocal<UUID> currentUserId = new ThreadLocal<>();
+    public static final ThreadLocal<String> currentToken = new ThreadLocal<>();
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        String userIdHeader = httpRequest.getHeader("X-User-Id");
 
-        if (userIdHeader != null) {
+        // Only trust the user identity established by JwtAuthFilter (verified JWT).
+        // The raw X-User-Id header is intentionally ignored to prevent spoofing.
+        Object userIdAttr = httpRequest.getAttribute(JwtAuthFilter.AUTH_USER_ID_ATTRIBUTE);
+        Object tokenAttr = httpRequest.getAttribute(JwtAuthFilter.AUTH_TOKEN_ATTRIBUTE);
+
+        if (userIdAttr != null) {
             try {
-                UUID userId = UUID.fromString(userIdHeader);
-                currentUserId.set(userId);
-            } catch (IllegalArgumentException e) {
-                // Invalid UUID, continue without setting context
+                currentUserId.set(UUID.fromString(userIdAttr.toString()));
+            } catch (IllegalArgumentException ignored) {
+                // Invalid user id claim, continue without setting context
             }
+        }
+        if (tokenAttr != null) {
+            currentToken.set(tokenAttr.toString());
         }
 
         try {
             chain.doFilter(request, response);
         } finally {
             currentUserId.remove();
+            currentToken.remove();
         }
     }
 }

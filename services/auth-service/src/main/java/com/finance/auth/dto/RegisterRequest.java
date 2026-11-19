@@ -1,8 +1,19 @@
 package com.finance.auth.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class RegisterRequest {
+    @NotBlank
+    @Email
     private String email;
+
+    @NotBlank
+    @Size(min = 8, max = 128)
     private String password;
+
+    @Size(max = 3)
     private String preferredCurrency;
 
     public RegisterRequest() {

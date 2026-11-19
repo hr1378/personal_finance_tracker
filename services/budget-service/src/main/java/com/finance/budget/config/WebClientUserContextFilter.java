@@ -12,11 +12,14 @@ public class WebClientUserContextFilter {
     public static ExchangeFilterFunction addUserContext() {
         return (request, next) -> {
             UUID userId = UserContextFilter.currentUserId.get();
+            String token = UserContextFilter.currentToken.get();
             if (userId != null) {
-                ClientRequest modifiedRequest = ClientRequest.from(request)
-                        .header("X-User-Id", userId.toString())
-                        .build();
-                return next.exchange(modifiedRequest);
+                ClientRequest.Builder builder = ClientRequest.from(request)
+                        .header("X-User-Id", userId.toString());
+                if (token != null) {
+                    builder.header("Authorization", "Bearer " + token);
+                }
+                return next.exchange(builder.build());
             }
             return next.exchange(request);
         };

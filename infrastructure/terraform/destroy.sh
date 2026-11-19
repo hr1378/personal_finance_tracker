@@ -20,6 +20,7 @@ fi
 
 echo "Checking AWS credentials for profile '$AWS_PROFILE' in $AWS_REGION..."
 aws sts get-caller-identity --profile "$AWS_PROFILE" >/dev/null
+eval "$(aws configure export-credentials --profile "$AWS_PROFILE" --format env)"
 
 terraform destroy -auto-approve
 

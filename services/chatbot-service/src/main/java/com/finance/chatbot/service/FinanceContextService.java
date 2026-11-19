@@ -2,6 +2,7 @@ package com.finance.chatbot.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.finance.chatbot.filter.UserContextFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,12 +88,15 @@ public class FinanceContextService {
 
     private String getJson(String url, UUID userId) {
         try {
-            HttpRequest req = HttpRequest.newBuilder()
+            String token = UserContextFilter.currentToken.get();
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(TIMEOUT)
-                    .header("X-User-Id", userId.toString())
-                    .GET()
-                    .build();
+                    .header("X-User-Id", userId.toString());
+            if (token != null) {
+                requestBuilder.header("Authorization", "Bearer " + token);
+            }
+            HttpRequest req = requestBuilder.GET().build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() >= 400) {
                 logger.warn("Finance context fetch failed {} -> {}", url, resp.statusCode());

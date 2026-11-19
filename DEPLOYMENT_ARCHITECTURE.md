@@ -2,7 +2,40 @@
 
 ## Overview
 
-This document describes the complete deployment architecture of the Personal Finance and Debt Tracker application using Docker Compose. The application follows a microservices architecture with an API Gateway pattern, event-driven communication via Kafka, and PostgreSQL for persistent storage.
+This document describes both the current AWS learning deployment and the full local Docker Compose stack. The AWS configuration is defined in `infrastructure/terraform`; it is a deliberately limited two-container deployment and does not represent the complete microservices application. The Docker Compose sections below document the broader local stack.
+
+## Current AWS Deployment
+
+### Deployment status and scope
+
+The repository contains Terraform configuration and deployment instructions for AWS. This documents the intended/configured deployment; it does not confirm that AWS resources are currently provisioned or running. The deployment is launched with `infrastructure/terraform/deploy.sh` and removed with `infrastructure/terraform/destroy.sh`.
+
+Only the public ARM64 images `hatimrangwala/finance-frontend:v1` and `hatimrangwala/finance-transaction-service:v1` are deployed. The frontend serves HTTP on port 80 and proxies `/api` to the transaction container using the ECS link alias `gateway`. The transaction service listens on container port 8080, exposed on a dynamic host port, and has an ECS health check at `/actuator/health`.
+
+Other application services and Kafka are not part of this AWS deployment. Budget, account, debt, dashboard, and chat features that depend on omitted services are unavailable. Transaction event publishing also has no Kafka broker.
+
+### AWS resources and network
+
+- **Region**: `us-east-1` by default.
+- **VPC**: `10.20.0.0/16`, with two public subnets and two private subnets across two available Availability Zones. An Internet Gateway and public route provide internet access to the ECS host. No NAT Gateway is created.
+- **ECS**: One ECS cluster (`finance-cluster`) and one service (`finance-application`) with desired count 1. The service uses EC2 launch type and bridge networking; it has no load balancer, autoscaling, service discovery, or ECS Exec configuration.
+- **EC2 capacity**: One public ARM64 ECS-optimized Amazon Linux 2023 host, default type `t4g.micro`, with a 30 GiB encrypted gp3 root volume and an ECS instance role/profile. The frontend is reached at the host's public IPv4 address on port 80. The single host is a failure and capacity bottleneck.
+- **RDS**: One private, single-AZ PostgreSQL 17.11 instance (`db.t4g.micro` by default) with 20 GiB encrypted gp3 storage in private subnets. The database security group accepts TCP 5432 only from the application security group. Backups, deletion protection, and final snapshots are disabled in this learning configuration.
+- **Image registry and logs**: Images are pulled from public Docker Hub; ECR is not provisioned. No CloudWatch log group or container log driver is configured, so ECS uses the Docker default logging behavior on the host.
+- **Public access**: The application security group allows inbound TCP 80 from `0.0.0.0/0`; it does not allow inbound SSH. RDS has no public endpoint access.
+
+### Request and data flow
+
+1. A browser connects over HTTP to the ECS EC2 host on port 80.
+2. The frontend container serves the UI and proxies `/api` requests to `gateway:8080` using the ECS container link to the transaction-service container.
+3. The transaction service connects to the private RDS endpoint using database `finance_tracker` and user `finance_user`.
+4. No schema is created by this deployment: Flyway is disabled and Hibernate DDL mode is `none`. The RDS database therefore needs schema setup before transaction operations that read or write application tables will work. The health check only indicates service health/database connectivity; it does not establish that application tables exist.
+
+### AWS deployment limitations
+
+This is a small learning deployment, not a production-ready architecture. It has one EC2 host, one ECS task, a single-AZ database, no load balancer, no managed secrets integration, and no configured backup retention. Terraform state and task environment settings contain the database password and must be protected. Destroying the stack deletes the database without a final snapshot.
+
+The Terraform deployment guide is in `infrastructure/terraform/README.md`; the console procedure is in `manually deploying on aws`.
 
 ## Network Architecture
 

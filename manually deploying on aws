@@ -5,7 +5,7 @@ This guide describes how to manually create the same learning deployment configu
 - Frontend: `hatimrangwala/finance-frontend:v1`
 - Transaction service: `hatimrangwala/finance-transaction-service:v1`
 
-The images are ARM64. Use an ARM64 ECS optimized EC2 host (`t4g.micro`) and the ECS optimized Amazon Linux 2023 ARM64 AMI. The host needs a 30 GiB gp3 root disk. The RDS instance is private, single-AZ, PostgreSQL 17.6, class `db.t4g.micro`, with 20 GiB gp3 storage. These resources can incur charges while they exist. A short run can still be billed; check current AWS pricing and your account's Free Tier eligibility.
+The images are ARM64. Use an ARM64 ECS optimized EC2 host (`t4g.micro`) and the ECS optimized Amazon Linux 2023 ARM64 AMI. The host needs a 30 GiB gp3 root disk. The RDS instance is private, single-AZ, PostgreSQL 17.11, class `db.t4g.micro`, with 20 GiB gp3 storage. These resources can incur charges while they exist. A short run can still be billed; check current AWS pricing and your account's Free Tier eligibility.
 
 > AWS Console labels change occasionally. In every console step, confirm the region shown in the top navigation is **US East (N. Virginia), `us-east-1`**. Use the `terraform-deployer` IAM user (or another authorized IAM user) for console access. Do not share passwords or verification codes in chat.
 
@@ -70,7 +70,7 @@ Record both security group IDs. The application group is intentionally public on
 ## 4. Create the RDS subnet group and database
 
 1. Open **RDS → Subnet groups → Create DB subnet group**. Name `finance-db`, description `Private subnets for finance database`, choose VPC `finance-vpc`, and add `finance-private-a` and `finance-private-b` (in two AZs). Create it.
-2. Open **RDS → Databases → Create database**. Choose **Standard create**, engine **PostgreSQL**, version **17.6** if offered (otherwise select a currently offered PostgreSQL 17 minor version and use that actual version in your notes).
+2. Open **RDS → Databases → Create database**. Choose **Standard create**, engine **PostgreSQL**, version **17.11** if offered (otherwise select a currently offered PostgreSQL 17 minor version and use that actual version in your notes).
 3. Under templates choose **Dev/Test** or equivalent. Set:
    - DB instance identifier: `finance-postgres`
    - Master username: `finance_user`

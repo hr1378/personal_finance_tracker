@@ -35,7 +35,7 @@ function App() {
     deleteTransaction
   } = useFinanceStore()
 
-  const { user, isAuthenticated, isGuest, logout, exitGuest } = useAuth()
+  const { user, isAuthenticated, isGuest, isRestoring, logout, exitGuest } = useAuth()
 
   const [currentView, setCurrentView] = useState<View>('overview')
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
@@ -54,6 +54,14 @@ function App() {
       fetchCards(user.id)
     }
   }, [isAuthenticated, user, fetchTransactions, fetchSummary, fetchBudgets, fetchDebts, fetchAccounts, fetchCards])
+
+  if (isRestoring) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-500">
+        Loading…
+      </div>
+    )
+  }
 
   if (!isAuthenticated && !isGuest) {
     return <StartPage />

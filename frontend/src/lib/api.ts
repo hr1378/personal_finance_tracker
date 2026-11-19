@@ -1,3 +1,4 @@
+import { getAccessToken } from './session'
 import type {
   Transaction,
   TransactionSummary,
@@ -26,7 +27,7 @@ const AGENT_API_URL = `${API_BASE_URL}/agent`
 
 // Helper to get auth headers
 function getAuthHeaders() {
-  const token = localStorage.getItem('token')
+  const token = getAccessToken()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) {
     headers['Authorization'] = `Bearer ${token}`

@@ -1,7 +1,7 @@
 package com.finance.gateway.config;
 
 import com.finance.gateway.filter.JwtAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -11,12 +11,16 @@ import org.springframework.core.env.Environment;
 @Configuration
 public class GatewayConfig {
 
-    @Autowired
-    private Environment env;
+    private final Environment env;
+
+    public GatewayConfig(Environment env) {
+        this.env = env;
+    }
 
     @Bean
-    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(env);
+    public RouteLocator customRouteLocator(RouteLocatorBuilder builder,
+                                           @Value("${jwt.secret}") String jwtSecret) {
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtSecret);
 
         return builder.routes()
                 .route("auth-service", r -> r.path("/api/auth/**")

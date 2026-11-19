@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { api } from './api'
+import { setAccessToken } from './session'
 import type { Account, Card } from '../types/finance'
 
 const mockAccount: Account = {
@@ -35,12 +36,13 @@ const mockCard: Card = {
 
 describe('api accounts and cards', () => {
   beforeEach(() => {
-    localStorage.setItem('token', 'test-token')
+    setAccessToken('test-token')
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
     localStorage.clear()
+    setAccessToken(null)
   })
 
   it('getAccounts fetches accounts for a user', async () => {

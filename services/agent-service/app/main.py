@@ -1,11 +1,12 @@
 """Agent service: LangGraph finance agent + savings goals + debt payoff analysis."""
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import goals, llm, payoff, services_client as svc
+from .auth import AuthContext, get_auth
 from .graph import run_agent
 
 
@@ -26,12 +27,6 @@ app.add_middleware(
 )
 
 
-def require_user(x_user_id: str | None) -> str:
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="Missing X-User-Id")
-    return x_user_id
-
-
 class ChatMessage(BaseModel):
     role: str
     content: str
@@ -48,15 +43,14 @@ def health():
 
 
 @app.get("/api/agent/status")
-def status():
+def status(auth: AuthContext = Depends(get_auth)):
     return {"provider": llm.detect_provider() or "none"}
 
 
 @app.post("/api/agent/chat")
-def chat(req: ChatRequest, x_user_id: str | None = Header(default=None)):
-    user_id = require_user(x_user_id)
+def chat(req: ChatRequest, auth: AuthContext = Depends(get_auth)):
     history = [m.model_dump() for m in req.history] if req.history else None
-    return run_agent(user_id, req.message, history)
+    return run_agent(auth.user_id, req.message, history, token=auth.token)
 
 
 # ---------- Savings goals ----------
@@ -72,40 +66,35 @@ class GoalContribute(BaseModel):
 
 
 @app.get("/api/agent/goals")
-def list_goals(x_user_id: str | None = Header(default=None)):
-    user_id = require_user(x_user_id)
-    return goals.list_goals(user_id)
+def list_goals(auth: AuthContext = Depends(get_auth)):
+    return goals.list_goals(auth.user_id)
 
 
 @app.post("/api/agent/goals", status_code=201)
-def create_goal(body: GoalCreate, x_user_id: str | None = Header(default=None)):
-    user_id = require_user(x_user_id)
-    return goals.create_goal(user_id, body.name, body.targetAmount, body.targetDate)
+def create_goal(body: GoalCreate, auth: AuthContext = Depends(get_auth)):
+    return goals.create_goal(auth.user_id, body.name, body.targetAmount, body.targetDate)
 
 
 @app.get("/api/agent/goals/{goal_id}/plan")
-def goal_plan(goal_id: str, x_user_id: str | None = Header(default=None)):
-    user_id = require_user(x_user_id)
-    goal = goals.get_goal(user_id, goal_id)
+def goal_plan(goal_id: str, auth: AuthContext = Depends(get_auth)):
+    goal = goals.get_goal(auth.user_id, goal_id)
     if not goal:
         raise HTTPException(404, "Goal not found")
-    return goals.build_plan(goal, svc.get_transactions(user_id))
+    return goals.build_plan(goal, svc.get_transactions(auth.user_id, auth.token))
 
 
 @app.post("/api/agent/goals/{goal_id}/contribute")
 def contribute(goal_id: str, body: GoalContribute,
-               x_user_id: str | None = Header(default=None)):
-    user_id = require_user(x_user_id)
-    g = goals.contribute(user_id, goal_id, body.amount)
+               auth: AuthContext = Depends(get_auth)):
+    g = goals.contribute(auth.user_id, goal_id, body.amount)
     if not g:
         raise HTTPException(404, "Goal not found")
     return g
 
 
 @app.delete("/api/agent/goals/{goal_id}", status_code=204)
-def delete_goal(goal_id: str, x_user_id: str | None = Header(default=None)):
-    user_id = require_user(x_user_id)
-    if not goals.delete_goal(user_id, goal_id):
+def delete_goal(goal_id: str, auth: AuthContext = Depends(get_auth)):
+    if not goals.delete_goal(auth.user_id, goal_id):
         raise HTTPException(404, "Goal not found")
 
 
@@ -113,17 +102,16 @@ def delete_goal(goal_id: str, x_user_id: str | None = Header(default=None)):
 
 @app.get("/api/agent/debts/payoff-plan")
 def payoff_plan(extra_monthly_payment: float = 0,
-                x_user_id: str | None = Header(default=None)):
+                auth: AuthContext = Depends(get_auth)):
     """Simulates avalanche vs snowball using all debts and all recorded payments."""
-    user_id = require_user(x_user_id)
-    debts = svc.get_debts(user_id)
+    debts = svc.get_debts(auth.user_id, auth.token)
     active = [d for d in debts if float(d.get("currentBalance") or 0) > 0]
 
     total_paid = 0.0
     payment_counts = 0
     for d in active:
         try:
-            payments = svc.get_debt_payments(user_id, d["id"])
+            payments = svc.get_debt_payments(auth.user_id, d["id"], auth.token)
             for p in payments:
                 total_paid += float(p.get("amount") or 0)
                 payment_counts += 1

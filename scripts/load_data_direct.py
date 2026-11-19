@@ -37,13 +37,15 @@ DB_CONFIG = {
     'host': os.environ.get('DB_HOST', 'localhost'),
     'port': int(os.environ.get('DB_PORT', '5432')),
     'database': 'finance_tracker',
-    'user': 'finance_user',
-    'password': 'finance_password'
+    'user': os.environ.get('POSTGRES_USER', 'finance_user'),
+    'password': os.environ.get('POSTGRES_PASSWORD')
 }
+if not DB_CONFIG['password']:
+    sys.exit('Set POSTGRES_PASSWORD (see .env.example) before running this script.')
 
 AUTH_URL = os.environ.get('AUTH_URL', 'http://localhost:8080/api/auth')
 TEST_EMAIL = 'test@example.com'
-TEST_PASSWORD = 'password123'  # matches the seeded demo user
+TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'password123')  # matches the seeded demo user
 
 BATCH_SIZE = 2000
 

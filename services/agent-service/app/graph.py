@@ -19,14 +19,15 @@ Rules:
 """
 
 
-def build_agent(user_id: str):
+def build_agent(user_id: str, token: str | None = None):
     model = llm.get_llm()
     if model is None:
         return None
-    return create_react_agent(model, build_tools(user_id))
+    return create_react_agent(model, build_tools(user_id, token))
 
 
-def run_agent(user_id: str, message: str, history: list[dict] | None = None) -> dict:
+def run_agent(user_id: str, message: str, history: list[dict] | None = None,
+              token: str | None = None) -> dict:
     """Run the agent and return {reply, provider, actions_taken}."""
     provider = llm.detect_provider()
     if provider is None:
@@ -36,7 +37,7 @@ def run_agent(user_id: str, message: str, history: list[dict] | None = None) -> 
             "actions_taken": [],
         }
 
-    agent = build_agent(user_id)
+    agent = build_agent(user_id, token)
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     if history:
         messages.extend(

@@ -6,7 +6,7 @@ This Terraform configuration is prepared for a small learning deployment using t
 
 - ECS cluster and one ECS service with one task containing the frontend and transaction-service containers.
 - One EC2 `t4g.micro` ARM64 host running the ECS-optimized Amazon Linux AMI. Both registry images publish ARM64 manifests; the x86 instance type cannot pull them. The AMI requires a 30 GiB root volume. A single host avoids Fargate and Auto Scaling Group resources and is enough for this low traffic learning setup, subject to the images fitting in the available memory.
-- One encrypted, single-AZ RDS PostgreSQL `db.t4g.micro` instance with 20 GiB storage.
+- One encrypted, single-AZ RDS PostgreSQL 17.11 `db.t4g.micro` instance with 20 GiB storage.
 - A VPC, two public subnets, two private DB subnets, an Internet Gateway, route table, security groups, and a small ECS instance role/profile are supporting configuration required for networking and ECS. The EC2 host is public for Docker registry pulls and browser access; RDS is private.
 - No load balancer, NAT Gateway, ECR, CloudWatch log group, or other application service is provisioned. ECS service/container logging uses the Docker default, so logs are available on the host.
 

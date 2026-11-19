@@ -4,6 +4,7 @@ import com.finance.auth.dto.AuthResponse;
 import com.finance.auth.dto.LoginRequest;
 import com.finance.auth.dto.RegisterRequest;
 import com.finance.auth.model.User;
+import com.finance.auth.repository.RefreshTokenRepository;
 import com.finance.auth.repository.UserRepository;
 import com.finance.auth.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,9 @@ class AuthServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;

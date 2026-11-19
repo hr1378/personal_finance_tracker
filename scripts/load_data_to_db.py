@@ -26,7 +26,7 @@ def register_user():
     """Register a test user"""
     user_data = {
         "email": "test@example.com",
-        "password": "TestPassword123!",
+        "password": os.environ.get("TEST_USER_PASSWORD", "TestPassword123!"),
         "preferredCurrency": "USD"
     }
 

@@ -9,4 +9,5 @@ langchain-google-genai==2.0.8
 httpx==0.28.1
 psycopg2-binary==2.9.10
 pydantic==2.10.3
+PyJWT[crypto]==2.10.1
 

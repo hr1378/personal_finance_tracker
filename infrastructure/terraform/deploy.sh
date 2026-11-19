@@ -21,6 +21,9 @@ export AWS_DEFAULT_REGION="$AWS_REGION"
 
 echo "Checking AWS credentials for profile '$AWS_PROFILE' in $AWS_REGION..."
 aws sts get-caller-identity --profile "$AWS_PROFILE" >/dev/null
+# AWS CLI login credentials are stored in the CLI login cache; export them so
+# the Terraform AWS provider can consume them through its standard env chain.
+eval "$(aws configure export-credentials --profile "$AWS_PROFILE" --format env)"
 
 if [[ ! -f terraform.tfvars ]]; then
   umask 077

@@ -4,6 +4,9 @@ import './index.css'
 import { Toaster } from 'sonner'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext'
+import { installAuthInterceptor } from './lib/authInterceptor'
+
+installAuthInterceptor()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

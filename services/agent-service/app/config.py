@@ -16,6 +16,9 @@ DEBT_SERVICE_URL = os.getenv("DEBT_SERVICE_URL", "http://localhost:8084")
 DASHBOARD_SERVICE_URL = os.getenv("DASHBOARD_SERVICE_URL", "http://localhost:8085")
 ACCOUNTS_SERVICE_URL = os.getenv("ACCOUNTS_SERVICE_URL", "http://localhost:8086")
 
+# JWT (must match auth-service / gateway)
+JWT_SECRET = os.getenv("JWT_SECRET", "")
+
 # Postgres for agent-owned data (savings goals)
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")

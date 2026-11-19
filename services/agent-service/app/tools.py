@@ -12,7 +12,7 @@ from langchain_core.tools import tool
 from . import goals, payoff, services_client as svc
 
 
-def build_tools(user_id: str) -> list:
+def build_tools(user_id: str, token: str | None = None) -> list:
 
     @tool
     def add_transaction(type: str, amount: float, category: str,
@@ -27,7 +27,7 @@ def build_tools(user_id: str) -> list:
             "date": date or date.today().isoformat(),
         }
         try:
-            tx = svc.create_transaction(user_id, payload)
+            tx = svc.create_transaction(user_id, payload, token)
             return f"Transaction created: {tx.get('type')} ${tx.get('amount')} - {tx.get('description')} (id {tx.get('id')})"
         except Exception as e:
             return f"Failed to create transaction: {e}"
@@ -42,7 +42,7 @@ def build_tools(user_id: str) -> list:
                 "spendingLimit": spending_limit,
                 "month": month,
                 "year": year,
-            })
+            }, token)
             return f"Budget created: {b.get('category')} limit ${b.get('spendingLimit')} for {b.get('month')}/{b.get('year')}"
         except Exception as e:
             return f"Failed to create budget: {e}"
@@ -59,7 +59,7 @@ def build_tools(user_id: str) -> list:
                 "apr": apr,
                 "minimumPayment": minimum_payment,
                 "dueDate": due_date or None,
-            })
+            }, token)
             return f"Debt created: {d.get('name')} balance ${d.get('currentBalance')} at {d.get('apr')}% APR"
         except Exception as e:
             return f"Failed to create debt: {e}"
@@ -68,7 +68,7 @@ def build_tools(user_id: str) -> list:
     def record_debt_payment(debt_name: str, amount: float, note: str = "") -> str:
         """Record a payment against a debt. debt_name is matched against existing debts."""
         try:
-            debts = svc.get_debts(user_id)
+            debts = svc.get_debts(user_id, token)
             match = next((d for d in debts
                           if debt_name.lower() in (d.get("name") or "").lower()), None)
             if not match:
@@ -78,7 +78,7 @@ def build_tools(user_id: str) -> list:
                 "amount": amount,
                 "paymentDate": date.today().isoformat(),
                 "note": note or "Payment via assistant",
-            })
+            }, token)
             return f"Payment of ${amount} recorded on '{match['name']}' (payment id {p.get('id')})"
         except Exception as e:
             return f"Failed to record payment: {e}"
@@ -114,7 +114,7 @@ def build_tools(user_id: str) -> list:
         """Analyze the user's finances and produce a savings plan for a goal
         (or all goals if goal_name is empty)."""
         try:
-            txs = svc.get_transactions(user_id)
+            txs = svc.get_transactions(user_id, token)
             goals_list = goals.list_goals(user_id)
             if goal_name:
                 goals_list = [g for g in goals_list
@@ -132,7 +132,7 @@ def build_tools(user_id: str) -> list:
         """Analyze ALL debts and ALL recorded payments, then simulate
         avalanche vs snowball payoff strategies month-by-month."""
         try:
-            debts = svc.get_debts(user_id)
+            debts = svc.get_debts(user_id, token)
             active = [d for d in debts if float(d.get("currentBalance") or 0) > 0]
             if not active:
                 return "No outstanding debts."
@@ -141,7 +141,7 @@ def build_tools(user_id: str) -> list:
             total_paid = 0.0
             for d in active:
                 try:
-                    payments = svc.get_debt_payments(user_id, d["id"])
+                    payments = svc.get_debt_payments(user_id, d["id"], token)
                     total_paid += sum(float(p.get("amount") or 0) for p in payments)
                 except Exception:
                     pass
@@ -162,7 +162,7 @@ def build_tools(user_id: str) -> list:
     def get_finance_summary() -> str:
         """Get the user's dashboard summary: balances, spending, recent activity."""
         try:
-            return str(svc.get_dashboard_summary(user_id))
+            return str(svc.get_dashboard_summary(user_id, token))
         except Exception as e:
             return f"Failed to get summary: {e}"
 
