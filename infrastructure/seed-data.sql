@@ -2,11 +2,11 @@
 -- Run this after the application is running
 
 -- Insert sample user (if not exists)
-INSERT INTO auth.user_profiles (id, email, password, preferred_currency, created_at, updated_at)
+INSERT INTO identity.user_profiles (id, email, password, preferred_currency, created_at, updated_at)
 VALUES (
     '123e4567-e89b-12d3-a456-426614174000',
     'demo@example.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- password: password123
+    '$2b$10$qDUknlmTVy0zA5/gyDnyueG9QkvZ6DfGpAPNymiQD1QW8VbsoPZAW', -- password: password123
     'USD',
     NOW(),
     NOW()

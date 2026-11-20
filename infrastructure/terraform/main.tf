@@ -18,10 +18,6 @@ locals {
   public_subnets = {
     for index, az in local.availability_zone : az => cidrsubnet(local.vpc_cidr, 8, index + 1)
   }
-  private_subnets = {
-    for index, az in local.availability_zone : az => cidrsubnet(local.vpc_cidr, 8, index + 11)
-  }
-  private_subnet_ids = [for az in local.availability_zone : aws_subnet.private[az].id]
 }
 
 resource "aws_vpc" "main" {
@@ -45,14 +41,6 @@ resource "aws_subnet" "public" {
   tags                    = { Name = "${local.name}-public-${each.key}" }
 }
 
-resource "aws_subnet" "private" {
-  for_each          = local.private_subnets
-  vpc_id            = aws_vpc.main.id
-  availability_zone = each.key
-  cidr_block        = each.value
-  tags              = { Name = "${local.name}-private-${each.key}" }
-}
-
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
   route {
@@ -66,12 +54,6 @@ resource "aws_route_table_association" "public" {
   for_each       = aws_subnet.public
   subnet_id      = each.value.id
   route_table_id = aws_route_table.public.id
-}
-
-resource "aws_db_subnet_group" "main" {
-  name       = "${local.name}-db"
-  subnet_ids = local.private_subnet_ids
-  tags       = { Name = "${local.name}-db-subnets" }
 }
 
 resource "aws_security_group" "application" {
@@ -95,28 +77,6 @@ resource "aws_security_group" "application" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = { Name = "${local.name}-application" }
-}
-
-resource "aws_security_group" "database" {
-  name        = "${local.name}-database"
-  description = "RDS PostgreSQL access from the ECS host"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description     = "PostgreSQL from application host"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.application.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = { Name = "${local.name}-database" }
 }
 
 resource "aws_iam_role" "ecs_instance" {
@@ -176,36 +136,6 @@ resource "aws_instance" "ecs" {
   tags = { Name = "${local.name}-ecs-instance" }
 }
 
-resource "aws_db_instance" "main" {
-  identifier                          = "${local.name}-postgres"
-  engine                              = "postgres"
-  engine_version                      = var.rds_engine_version
-  instance_class                      = var.rds_instance_class
-  allocated_storage                   = var.rds_allocated_storage
-  storage_type                        = "gp3"
-  storage_encrypted                   = true
-  db_name                             = var.rds_database_name
-  username                            = var.rds_username
-  password                            = var.rds_password
-  db_subnet_group_name                = aws_db_subnet_group.main.name
-  vpc_security_group_ids              = [aws_security_group.database.id]
-  multi_az                            = false
-  publicly_accessible                 = false
-  port                                = 5432
-  backup_retention_period             = 0
-  deletion_protection                 = false
-  skip_final_snapshot                 = true
-  copy_tags_to_snapshot               = false
-  apply_immediately                   = false
-  auto_minor_version_upgrade          = true
-  allow_major_version_upgrade         = false
-  enabled_cloudwatch_logs_exports     = []
-  performance_insights_enabled        = false
-  monitoring_interval                 = 0
-  ca_cert_identifier                  = "rds-ca-rsa2048-g1"
-  iam_database_authentication_enabled = false
-}
-
 resource "aws_ecs_task_definition" "application" {
   family                   = "${local.name}-application"
   network_mode             = "bridge"
@@ -224,9 +154,10 @@ resource "aws_ecs_task_definition" "application" {
         protocol      = "tcp"
       }]
       environment = [
-        { name = "SPRING_DATASOURCE_URL", value = "jdbc:postgresql://${aws_db_instance.main.address}:${aws_db_instance.main.port}/${aws_db_instance.main.db_name}" },
-        { name = "SPRING_DATASOURCE_USERNAME", value = var.rds_username },
-        { name = "SPRING_DATASOURCE_PASSWORD", value = var.rds_password },
+        { name = "SPRING_DATASOURCE_URL", value = var.supabase_jdbc_url },
+        { name = "SPRING_DATASOURCE_USERNAME", value = var.supabase_username },
+        { name = "SPRING_DATASOURCE_PASSWORD", value = var.supabase_password },
+        { name = "JWT_SECRET", value = var.jwt_secret },
         { name = "SPRING_JPA_HIBERNATE_DDL_AUTO", value = "none" },
         { name = "SPRING_FLYWAY_ENABLED", value = "false" },
         { name = "SERVER_PORT", value = "8080" },
@@ -279,5 +210,5 @@ resource "aws_ecs_service" "application" {
     rollback = true
   }
 
-  depends_on = [aws_instance.ecs, aws_db_instance.main]
+  depends_on = [aws_instance.ecs]
 }

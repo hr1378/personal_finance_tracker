@@ -54,51 +54,39 @@ variable "frontend_container_port" {
   }
 }
 
-variable "rds_instance_class" {
-  description = "RDS PostgreSQL instance class."
+variable "supabase_jdbc_url" {
+  description = "JDBC URL for the Supabase Postgres session pooler, e.g. jdbc:postgresql://aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0"
   type        = string
-  default     = "db.t4g.micro"
+  default     = "jdbc:postgresql://aws-0-us-west-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0"
 }
 
-variable "rds_allocated_storage" {
-  description = "Initial RDS PostgreSQL storage in GiB."
-  type        = number
-  default     = 20
-
-  validation {
-    condition     = var.rds_allocated_storage >= 20 && var.rds_allocated_storage <= 65536
-    error_message = "rds_allocated_storage must be between 20 and 65536 GiB for PostgreSQL."
-  }
-}
-
-variable "rds_engine_version" {
-  description = "RDS PostgreSQL engine version."
+variable "supabase_username" {
+  description = "Supabase Postgres username (postgres.<project-ref> for the pooler)."
   type        = string
-  default     = "17.11"
+  default     = "postgres.ozdbgastmdzryvrugmae"
 }
 
-variable "rds_database_name" {
-  description = "Application database name."
-  type        = string
-  default     = "finance_tracker"
-}
-
-variable "rds_username" {
-  description = "Application database username."
-  type        = string
-  default     = "finance_user"
-  sensitive   = true
-}
-
-variable "rds_password" {
-  description = "Application database password. Supply through TF_VAR_rds_password or a Terraform variables file excluded from Git."
+variable "supabase_password" {
+  description = "Supabase database password. Supply through TF_VAR_supabase_password or a Terraform variables file excluded from Git."
   type        = string
   sensitive   = true
   nullable    = false
 
   validation {
-    condition     = length(var.rds_password) >= 8
-    error_message = "rds_password must be at least 8 characters."
+    condition     = length(var.supabase_password) >= 8
+    error_message = "supabase_password must be at least 8 characters."
+  }
+}
+
+variable "jwt_secret" {
+  description = "JWT signing secret shared by the services. Supply through TF_VAR_jwt_secret or a Terraform variables file excluded from Git."
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = length(var.jwt_secret) >= 32
+    error_message = "jwt_secret must be at least 32 characters."
   }
 }
 

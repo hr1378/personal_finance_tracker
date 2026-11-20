@@ -36,15 +36,26 @@ EOF
   chmod 600 terraform.tfvars
 fi
 
-if ! grep -q '^rds_password[[:space:]]*=' terraform.tfvars; then
-  read -rsp "Set an RDS password (8+ characters): " RDS_PASSWORD
+if ! grep -q '^supabase_password[[:space:]]*=' terraform.tfvars; then
+  read -rsp "Set the Supabase database password (8+ characters): " SUPABASE_PASSWORD
   printf '\n'
-  if (( ${#RDS_PASSWORD} < 8 )); then
+  if (( ${#SUPABASE_PASSWORD} < 8 )); then
     echo "Password must be at least 8 characters." >&2
     exit 1
   fi
-  printf 'rds_password = %s\n' "$(printf '%s' "$RDS_PASSWORD" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')" >> terraform.tfvars
-  unset RDS_PASSWORD
+  printf 'supabase_password = %s\n' "$(printf '%s' "$SUPABASE_PASSWORD" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')" >> terraform.tfvars
+  unset SUPABASE_PASSWORD
+fi
+
+if ! grep -q '^jwt_secret[[:space:]]*=' terraform.tfvars; then
+  read -rsp "Set the JWT secret (32+ characters): " JWT_SECRET_VALUE
+  printf '\n'
+  if (( ${#JWT_SECRET_VALUE} < 32 )); then
+    echo "JWT secret must be at least 32 characters." >&2
+    exit 1
+  fi
+  printf 'jwt_secret = %s\n' "$(printf '%s' "$JWT_SECRET_VALUE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')" >> terraform.tfvars
+  unset JWT_SECRET_VALUE
 fi
 
 terraform init

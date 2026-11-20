@@ -1,35 +1,15 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16
-    container_name: finance-tracker-db
-    environment:
-      POSTGRES_DB: finance_tracker
-      POSTGRES_USER: finance_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-    ports:
-      - "127.0.0.1:5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U finance_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   auth-service:
     build: ../services/auth-service
     container_name: auth-service
     ports:
       - "127.0.0.1:8081:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
-      SPRING_DATASOURCE_USERNAME: finance_user
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      SPRING_DATASOURCE_URL: ${APP_DB_URL:?Set APP_DB_URL in .env}
+      SPRING_DATASOURCE_USERNAME: ${APP_DB_USERNAME:?Set APP_DB_USERNAME in .env}
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     restart: on-failure
 
@@ -38,13 +18,10 @@ services:
     container_name: transaction-service
     ports:
       - "127.0.0.1:8082:8082"
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
-      SPRING_DATASOURCE_USERNAME: finance_user
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      SPRING_DATASOURCE_URL: ${APP_DB_URL:?Set APP_DB_URL in .env}
+      SPRING_DATASOURCE_USERNAME: ${APP_DB_USERNAME:?Set APP_DB_USERNAME in .env}
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     restart: on-failure
 
@@ -53,13 +30,10 @@ services:
     container_name: budget-service
     ports:
       - "127.0.0.1:8083:8083"
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
-      SPRING_DATASOURCE_USERNAME: finance_user
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      SPRING_DATASOURCE_URL: ${APP_DB_URL:?Set APP_DB_URL in .env}
+      SPRING_DATASOURCE_USERNAME: ${APP_DB_USERNAME:?Set APP_DB_USERNAME in .env}
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     restart: on-failure
 
@@ -68,13 +42,10 @@ services:
     container_name: debt-service
     ports:
       - "127.0.0.1:8084:8084"
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
-      SPRING_DATASOURCE_USERNAME: finance_user
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      SPRING_DATASOURCE_URL: ${APP_DB_URL:?Set APP_DB_URL in .env}
+      SPRING_DATASOURCE_USERNAME: ${APP_DB_USERNAME:?Set APP_DB_USERNAME in .env}
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     restart: on-failure
 
@@ -84,8 +55,6 @@ services:
     ports:
       - "127.0.0.1:8085:8085"
     depends_on:
-      postgres:
-        condition: service_healthy
       transaction-service:
         condition: service_started
       budget-service:
@@ -93,9 +62,9 @@ services:
       debt-service:
         condition: service_started
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_tracker
-      SPRING_DATASOURCE_USERNAME: finance_user
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      SPRING_DATASOURCE_URL: ${APP_DB_URL:?Set APP_DB_URL in .env}
+      SPRING_DATASOURCE_USERNAME: ${APP_DB_USERNAME:?Set APP_DB_USERNAME in .env}
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       TRANSACTION.SERVICE.URL: http://transaction-service:8082
       BUDGET.SERVICE.URL: http://budget-service:8083
@@ -116,6 +85,3 @@ services:
     environment:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     restart: on-failure
-
-volumes:
-  postgres_data:

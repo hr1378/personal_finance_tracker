@@ -23,13 +23,12 @@ output "frontend_access_address" {
   value       = "http://${aws_instance.ecs.public_ip}:${var.frontend_container_port}"
 }
 
-output "rds_endpoint" {
-  description = "RDS PostgreSQL endpoint."
-  value       = aws_db_instance.main.endpoint
-  sensitive   = false
+output "database_provider" {
+  description = "External database provider used by the deployment."
+  value       = "supabase"
 }
 
-output "database_name" {
-  description = "Application database name."
-  value       = aws_db_instance.main.db_name
+output "database_jdbc_url" {
+  description = "JDBC URL of the Supabase Postgres pooler."
+  value       = var.supabase_jdbc_url
 }

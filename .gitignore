@@ -34,3 +34,8 @@ __pycache__/
 
 # Generated test data
 scripts/*.json
+
+# Terraform state (may contain secrets)
+*.tfstate
+*.tfstate.*
+*.tfplan

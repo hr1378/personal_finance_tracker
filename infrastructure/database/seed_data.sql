@@ -2,12 +2,12 @@
 -- This script creates schemas, tables, and inserts realistic financial data
 
 -- Create Schemas
-CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS identity;
 CREATE SCHEMA IF NOT EXISTS budget;
 CREATE SCHEMA IF NOT EXISTS debt;
 
 -- Create Tables
-CREATE TABLE IF NOT EXISTS auth.user_profiles (
+CREATE TABLE IF NOT EXISTS identity.user_profiles (
     id UUID PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -62,11 +62,11 @@ CREATE TABLE IF NOT EXISTS debt.debt_payments (
 );
 
 -- Insert User Profile
-INSERT INTO auth.user_profiles (id, email, password, preferred_currency, created_at, updated_at)
+INSERT INTO identity.user_profiles (id, email, password, preferred_currency, created_at, updated_at)
 VALUES (
     '550e8400-e29b-41d4-a716-446655440000',
     'john.doe@example.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$qDUknlmTVy0zA5/gyDnyueG9QkvZ6DfGpAPNymiQD1QW8VbsoPZAW',
     'USD',
     '2025-01-15 08:30:00',
     '2026-10-22 10:00:00'
