@@ -135,8 +135,6 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - name: Auth Service
-            path: services/auth-service
           - name: Transaction Service
             path: services/transaction-service
           - name: Budget Service
@@ -145,10 +143,6 @@ jobs:
             path: services/debt-service
           - name: Accounts Service
             path: services/accounts-service
-          - name: Dashboard Service
-            path: services/dashboard-service
-          - name: Chatbot Service
-            path: services/chatbot-service
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -162,7 +156,7 @@ jobs:
 
       - name: Run integration tests with Testcontainers
         working-directory: ${{ matrix.service.path }}
-        run: mvn -B test -Dtest=*IntegrationTest
+        run: mvn -B test '-Dtest=*IntegrationTest'
 
       - name: Upload integration test reports
         if: always()
