@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter } from 'recharts'
-import { TrendingUp, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, PiggyBank, Target } from 'lucide-react'
+import { TrendingUp, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, PiggyBank, Target, Database, CircleCheck, CircleAlert, LoaderCircle } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Card } from '../components/ui/Card'
 import { StatCard } from '../components/ui/StatCard'
@@ -43,9 +43,20 @@ interface OverviewProps {
   summary: Summary
   budgets?: Budget[]
   debts?: Debt[]
+  supabaseConnection: 'checking' | 'connected' | 'unavailable'
 }
 
-export function Overview({ transactions, summary, budgets = [], debts = [] }: OverviewProps) {
+export function Overview({ transactions, summary, budgets = [], debts = [], supabaseConnection }: OverviewProps) {
+  const connectionLabel = {
+    checking: 'Checking connection',
+    connected: 'Connected',
+    unavailable: 'Connection unavailable',
+  }[supabaseConnection]
+  const ConnectionIcon = {
+    checking: LoaderCircle,
+    connected: CircleCheck,
+    unavailable: CircleAlert,
+  }[supabaseConnection]
   // Calculate category breakdown
   const expenseCategories = transactions
     .filter(t => t.type === 'EXPENSE')
@@ -99,6 +110,30 @@ export function Overview({ transactions, summary, budgets = [], debts = [] }: Ov
 
   return (
     <div className="space-y-6">
+      <div
+        role="status"
+        aria-live="polite"
+        className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+          supabaseConnection === 'connected'
+            ? 'border-emerald-400/20 bg-emerald-400/5'
+            : supabaseConnection === 'unavailable'
+              ? 'border-rose-400/20 bg-rose-400/5'
+              : 'border-white/10 bg-white/[0.03]'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <Database className="h-5 w-5 text-white/70" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-semibold text-white">Data source: Supabase</p>
+            <p className="text-xs text-white/55">Transaction summary API</p>
+          </div>
+        </div>
+        <div className={`flex items-center gap-2 text-sm ${supabaseConnection === 'unavailable' ? 'text-rose-300' : supabaseConnection === 'connected' ? 'text-emerald-300' : 'text-white/60'}`}>
+          <ConnectionIcon className={`h-4 w-4 ${supabaseConnection === 'checking' ? 'animate-spin' : ''}`} aria-hidden="true" />
+          <span>{connectionLabel}</span>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

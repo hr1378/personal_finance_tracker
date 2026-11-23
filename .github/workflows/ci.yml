@@ -122,7 +122,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.service.path }}-test-reports
+          name: ${{ matrix.service.name }}-test-reports
           path: ${{ matrix.service.path }}/target/surefire-reports
           if-no-files-found: ignore
           retention-days: 7
@@ -168,7 +168,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.service.path }}-integration-test-reports
+          name: ${{ matrix.service.name }}-integration-test-reports
           path: ${{ matrix.service.path }}/target/surefire-reports
           if-no-files-found: ignore
           retention-days: 7

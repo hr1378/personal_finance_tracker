@@ -1,0 +1,112 @@
+docker Desktop running
+
+root
+
+docker compose up -d --build
+
+docker compose ps
+
+if it fails 
+docker compose logs --tail=100 SERVICE_NAME
+
+- Application:    http://127.0.0.1:3000/
+- Prometheus:     http://127.0.0.1:9090/
+- Grafana:        http://127.0.0.1:3001/
+- Kibana:         http://127.0.0.1:5601/
+- Elasticsearch:  http://127.0.0.1:9200/
+- API Gateway:    http://127.0.0.1:8080/
+
+The React and TypeScript frontend calls the API gateway. The gateway checks
+the JWT and routes requests to Spring Boot services. The transaction service
+reads the demo user's records from Supabase Postgres; the overview status is
+based on a successful summary API request
+
+Explain the login flow: the frontend sends credentials to the auth API;
+   auth verifies the stored password using BCrypt and returns a signed JWT.
+   The frontend sends the token as a Bearer token on protected API calls.
+
+
+Point out that the gateway JWT filter allows login/register and actuator
+   paths through, and requires a valid signed token for application routes.
+   It removes any client-provided X-User-Id and sets X-User-Id from the
+   verified token claim. This prevents a caller from choosing another user
+   simply by changing that header.
+
+xplain that the Supabase database password and shared JWT signing secret
+   are supplied to backend containers from environment configuration. The
+   frontend receives neither secret. Terraform state can contain sensitive
+   values, so keep it private and never commit or casually share it.
+
+For AWS, show the Terraform security groups in the plan/code. The minimal
+   deployment opens its frontend HTTP port publicly, keeps the database in
+   private subnets, and permits the EC2 host outbound traffic. Explain that
+   public HTTP is not HTTPS and that this learning stack has no ALB/TLS/WAF.
+
+Filebeat reads Docker container JSON logs and ships them to
+Elasticsearch. Kibana searches and displays th
+
+AWS sign-in and temporary credential export:
+
+1. From any terminal, sign in to the configured AWS profile:
+
+     aws login --profile terraform-deployer
+
+2. Confirm which AWS identity is active without printing credentials:
+
+     aws sts get-caller-identity --profile terraform-deployer
+
+3. In the SAME terminal session, export temporary credentials in the format
+   expected by Terraform's AWS provider:
+
+     eval "$(aws configure export-credentials --profile terraform-deployer --format env)"
+     export AWS_PROFILE=terraform-deployer
+     export AWS_REGION=us-east-1
+     export AWS_DEFAULT_REGION="$AWS_REGION"
+
+   Do not run `env`, `set`, or paste credential output into the presentation.
+   The credentials expire; sign in and export again if the session expires.
+
+4. Change into the Terraform directory:
+
+     cd infrastructure/terraform
+
+5. Run the deploy script:
+
+     ./deploy.sh
+
+   It checks the AWS identity, creates a local gitignored terraform.tfvars if
+   needed, asks for the Supabase database password and JWT secret, runs
+   terraform init, terraform plan, and terraform apply, then prints the
+   frontend address. Enter secrets only into the hidden prompts. Review the
+   Terraform plan before approving any resource creation.
+
+6. Show outputs (avoid displaying sensitive values):
+
+     terraform output
+     terraform output -raw frontend_access_address
+     terraform output -raw ecs_cluster_name
+     terraform output -raw ecs_service_name
+
+   Open the address only after ECS reports the service/task is running and
+   health checks pass. The public app endpoint is plain HTTP in this setup.
+
+7. Show AWS architecture in the AWS console: VPC/subnets/security groups,
+   EC2 ECS host, ECS cluster and service/task, and the public IP endpoint.
+   Explain Terraform records managed infrastructure as code and state; it
+   does not deploy the entire local stack in this configuration.
+
+8. After the presentation, remove the Terraform deployment to stop ongoing
+   resource charges. From infrastructure/terraform, with the same valid AWS
+   profile/region:
+
+     terraform plan -destroy
+
+     terraform destroy
+
+   Review the destroy action. This permanently deletes the Terraform-managed
+   RDS instance if present; current configuration documentation says there is
+   no final snapshot. Do not delete Terraform state manually before destroy.
+
+If `aws login` is not supported in the installed CLI, follow the established
+team/account login method and use `aws sts get-caller-identity` to verify it.
+The repository deploy script itself uses `aws configure export-credentials`.

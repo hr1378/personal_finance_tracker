@@ -35,7 +35,14 @@ __pycache__/
 # Generated test data
 scripts/*.json
 
+# Local presentation runbooks
+demo-plan.txt
+system-design.txt
+
 # Terraform state (may contain secrets)
 *.tfstate
 *.tfstate.*
 *.tfplan
+
+# Personal interview preparation notes
+questions.txt

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Migrate the personal-finance schema to Supabase Postgres and seed demo data.
+"""Migrate the schema and seed 50,000 transactions for demo@example.com.
 
-Applies every service's Flyway migrations (in order) against a Supabase
-Postgres database and records them in flyway_schema_history so the services'
-own Flyway instances see them as already applied. Then seeds users and
-~50k transactions plus supporting accounts/cards/budgets/debts.
+Applies each service migration to Supabase and records it in Flyway history.
+Then tops up only the target account to 50,000 transaction rows, preserving
+other user data and making repeated runs safe.
 
 Usage:
     SUPABASE_DATABASE_URL='postgresql://postgres.<ref>:<pw>@aws-0-<region>.pooler.supabase.com:6543/postgres' \
@@ -43,7 +42,7 @@ CREATE TABLE IF NOT EXISTS {schema}.flyway_schema_history (
     script VARCHAR(1000) NOT NULL,
     checksum INT,
     installed_by VARCHAR(100) NOT NULL,
-    installed_on TIMESTAMP NOT NULL,
+    installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     execution_time INT NOT NULL,
     success BOOLEAN NOT NULL
 );
@@ -73,6 +72,12 @@ def apply_migrations(conn):
     for service, schema in SERVICES.items():
         cur.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
         cur.execute(HISTORY_DDL.format(schema=schema))
+        # Existing history tables may have been created by an earlier version
+        # of this script without a default. Flyway's own inserts rely on one.
+        cur.execute(
+            f"ALTER TABLE {schema}.flyway_schema_history "
+            "ALTER COLUMN installed_on SET DEFAULT CURRENT_TIMESTAMP"
+        )
         rank[schema] = cur.execute(
             f"SELECT COALESCE(MAX(installed_rank),0) FROM {schema}.flyway_schema_history"
         ) or 0
@@ -109,14 +114,9 @@ def apply_migrations(conn):
         print(f"[{schema}] applied migrations for {service}")
 
 
-BCRYPT_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # password123
-
-NEW_USERS = [
-    ("emma@example.com", "Emma", "USD"),
-    ("liam@example.com", "Liam", "USD"),
-    ("olivia@example.com", "Olivia", "EUR"),
-    ("noah@example.com", "Noah", "USD"),
-]
+TARGET_EMAIL = "demo@example.com"
+TARGET_TRANSACTION_COUNT = 50_000
+ONE_OFF_SAMPLE_TRANSACTION_ID = "950e8400-e29b-41d4-a716-446655440050"
 
 EXPENSE_CATEGORIES = [
     ("Food & Dining", (5, 120)), ("Transportation", (10, 90)),
@@ -150,133 +150,71 @@ DESCRIPTIONS = {
 
 
 def seed_users(conn):
+    """Return the existing target account; never create additional demo users."""
     cur = conn.cursor()
-    user_ids = []
-    now = datetime.datetime.now()
-    for email, _, currency in NEW_USERS:
-        uid = str(uuid.uuid4())
-        cur.execute(
-            """INSERT INTO identity.user_profiles
-               (id, email, password, preferred_currency, created_at, updated_at)
-               VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT (email) DO NOTHING""",
-            (uid, email, BCRYPT_HASH, currency, now, now),
+    cur.execute("SELECT id FROM identity.user_profiles WHERE email=%s", (TARGET_EMAIL,))
+    row = cur.fetchone()
+    if row is None:
+        raise RuntimeError(f"Target account {TARGET_EMAIL} does not exist in Supabase")
+    return [str(row[0])]
+
+
+def seed_transactions(conn, user_ids, cat_ids, total=TARGET_TRANSACTION_COUNT):
+    user_id = user_ids[0]
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM transactions WHERE user_id=%s", (user_id,))
+    current_count = cur.fetchone()[0]
+    cur.execute(
+        "SELECT COUNT(*) FROM transactions WHERE user_id=%s AND id=%s",
+        (user_id, ONE_OFF_SAMPLE_TRANSACTION_ID),
+    )
+    one_off_count = cur.fetchone()[0]
+    retained_count = current_count - one_off_count
+    if retained_count > total:
+        raise RuntimeError(
+            f"{TARGET_EMAIL} already has {retained_count} non-sample transactions; "
+            f"refusing to delete user data to force the total down to {total}"
         )
-        cur.execute("SELECT id FROM identity.user_profiles WHERE email=%s", (email,))
-        user_ids.append(str(cur.fetchone()[0]))
+
+    # Replace the prior aggregate-amount example with individual transaction rows.
+    cur.execute(
+        "DELETE FROM transactions WHERE user_id=%s AND id=%s",
+        (user_id, ONE_OFF_SAMPLE_TRANSACTION_ID),
+    )
     conn.commit()
-    return user_ids
+    remaining = total - retained_count
 
-
-def seed_supporting_data(conn, user_ids):
-    cur = conn.cursor()
-    now = datetime.datetime.now()
-    cur.execute("SELECT name, id FROM categories")
-    cat_ids = {name: str(cid) for name, cid in cur.fetchall()}
-
-    accounts, cards = {}, {}
-    for uid in user_ids:
-        acc_checking, acc_savings = str(uuid.uuid4()), str(uuid.uuid4())
-        cur.execute(
-            """INSERT INTO account.accounts
-               (id,user_id,name,institution,account_type,currency,current_balance,is_active,created_at,updated_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,true,%s,%s)""",
-            (acc_checking, uid, "Everyday Checking", "Chase", "CHECKING", "USD", 4200.00, now, now),
-        )
-        cur.execute(
-            """INSERT INTO account.accounts
-               (id,user_id,name,institution,account_type,currency,current_balance,is_active,created_at,updated_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,true,%s,%s)""",
-            (acc_savings, uid, "High-Yield Savings", "Ally", "SAVINGS", "USD", 18500.00, now, now),
-        )
-        card1, card2 = str(uuid.uuid4()), str(uuid.uuid4())
-        cur.execute(
-            """INSERT INTO account.cards
-               (id,user_id,account_id,name,card_type,last_four,network,credit_limit,current_balance,apr,
-                expiry_month,expiry_year,is_active,created_at,updated_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,true,%s,%s)""",
-            (card1, uid, acc_checking, "Platinum Rewards", "CREDIT", "4821", "VISA",
-             10000.00, 1240.55, 21.99, 8, 2028, now, now),
-        )
-        cur.execute(
-            """INSERT INTO account.cards
-               (id,user_id,account_id,name,card_type,last_four,network,current_balance,is_active,created_at,updated_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,true,%s,%s)""",
-            (card2, uid, acc_checking, "Everyday Debit", "DEBIT", "9034", "MASTERCARD",
-             -85.20, now, now),
-        )
-        accounts[uid] = [acc_checking, acc_savings]
-        cards[uid] = [card1, card2]
-
-        month, year = now.month, now.year
-        for cat, limit in [
-            ("Housing", 1800), ("Food & Dining", 600), ("Transportation", 250),
-            ("Entertainment", 200), ("Shopping", 300), ("Utilities", 300),
-            ("Healthcare", 200), ("Debt Payments", 500),
-        ]:
-            cur.execute(
-                """INSERT INTO budget.budgets
-                   (id,user_id,category,month,year,spending_limit,created_at,updated_at)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (str(uuid.uuid4()), uid, cat, month, year, limit, now, now),
-            )
-
-        for name, orig, bal, apr, minpay in [
-            ("Platinum Credit Card", 8000, 5240.55, 21.99, 180),
-            ("Auto Loan", 22000, 14750.00, 5.9, 420),
-        ]:
-            did = str(uuid.uuid4())
-            cur.execute(
-                """INSERT INTO debt.debts
-                   (id,user_id,name,original_balance,current_balance,apr,minimum_payment,due_date,created_at,updated_at)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (did, uid, name, orig, bal, apr, minpay,
-                 (now + datetime.timedelta(days=random.randint(5, 25))).date(), now, now),
-            )
-            for _ in range(3):
-                cur.execute(
-                    """INSERT INTO debt.debt_payments
-                       (id,user_id,debt_id,amount,payment_date,note,created_at)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                    (str(uuid.uuid4()), uid, did, minpay,
-                     (now - datetime.timedelta(days=random.randint(30, 300))).date(),
-                     "Monthly payment", now),
-                )
-    conn.commit()
-    return cat_ids, accounts, cards
-
-
-def seed_transactions(conn, user_ids, cat_ids, accounts, cards, total=50000):
-    cur = conn.cursor()
     rng = random.Random(42)
     today = datetime.date.today()
-    per_user = total // len(user_ids)
-    expense_cats = [(n, lo, hi) for n, (lo, hi) in EXPENSE_CATEGORIES]
-    income_cats = [(n, lo, hi) for n, (lo, hi) in INCOME_CATEGORIES]
+    expense_cats = [(n, lo, hi) for n, (lo, hi) in EXPENSE_CATEGORIES if n in cat_ids]
+    income_cats = [(n, lo, hi) for n, (lo, hi) in INCOME_CATEGORIES if n in cat_ids]
+    if not expense_cats or not income_cats:
+        raise RuntimeError("Expected seeded income and expense categories are missing")
 
     batch, count = [], 0
-    for uid in user_ids:
-        for _ in range(per_user):
-            is_income = rng.random() < 0.22
-            name, lo, hi = rng.choice(income_cats if is_income else expense_cats)
-            amount = round(rng.uniform(lo, hi), 2)
-            days_ago = rng.randint(0, 365)
-            d = today - datetime.timedelta(days=days_ago)
-            ts = datetime.datetime.combine(d, datetime.time(rng.randint(0, 23), rng.randint(0, 59)))
-            desc = rng.choice(DESCRIPTIONS.get(name, ["Transaction"]))
-            acc = rng.choice(accounts[uid]) if rng.random() < 0.8 else None
-            crd = rng.choice(cards[uid]) if (not is_income and rng.random() < 0.45) else None
-            batch.append((
-                str(uuid.uuid4()), uid,
-                "INCOME" if is_income else "EXPENSE",
-                amount, name, cat_ids.get(name), d, desc, acc, crd, ts,
-            ))
-            count += 1
-            if len(batch) >= 2000:
-                _flush(cur, batch); conn.commit(); batch.clear()
-                print(f"  inserted {count}/{total}")
+    for _ in range(remaining):
+        is_income = rng.random() < 0.22
+        name, lo, hi = rng.choice(income_cats if is_income else expense_cats)
+        amount = round(rng.uniform(lo, hi), 2)
+        day = today - datetime.timedelta(days=rng.randint(0, 365))
+        created_at = datetime.datetime.combine(
+            day, datetime.time(rng.randint(0, 23), rng.randint(0, 59))
+        )
+        description = f"Sample data: {rng.choice(DESCRIPTIONS.get(name, ['Transaction']))}"
+        batch.append((
+            str(uuid.uuid4()), user_id, "INCOME" if is_income else "EXPENSE",
+            amount, name, cat_ids[name], day, description, None, None, created_at,
+        ))
+        count += 1
+        if len(batch) >= 2000:
+            _flush(cur, batch)
+            conn.commit()
+            batch.clear()
+            print(f"  inserted {count}/{remaining} new rows")
     if batch:
-        _flush(cur, batch); conn.commit()
-    print(f"Done: {count} transactions")
+        _flush(cur, batch)
+        conn.commit()
+    print(f"Added {count} rows; target total is {total} for {TARGET_EMAIL}")
 
 
 def _flush(cur, batch):
@@ -290,77 +228,42 @@ def _flush(cur, batch):
     )
 
 
-def seed_snapshots(conn, user_ids):
-    cur = conn.cursor()
-    today = datetime.date.today()
-    months = []
-    y, m = today.year, today.month
-    for _ in range(12):
-        months.append((m, y))
-        m -= 1
-        if m == 0:
-            m, y = 12, y - 1
-    for uid in user_ids:
-        for month, year in months:
-            cur.execute(
-                """INSERT INTO dashboard.dashboard_snapshots
-                   (id,user_id,month,year,income_total,expense_total,outstanding_debt,generated_at)
-                   SELECT gen_random_uuid(), %s, %s, %s,
-                          COALESCE(SUM(amount) FILTER (WHERE type='INCOME'),0),
-                          COALESCE(SUM(amount) FILTER (WHERE type='EXPENSE'),0),
-                          (SELECT COALESCE(SUM(current_balance),0) FROM debt.debts WHERE user_id=%s),
-                          NOW()
-                   FROM transactions
-                   WHERE user_id=%s
-                     AND EXTRACT(MONTH FROM date)=%s AND EXTRACT(YEAR FROM date)=%s""",
-                (uid, month, year, uid, uid, month, year),
-            )
-    conn.commit()
-    print("dashboard snapshots seeded")
-
-
 def main():
     dsn = os.environ.get("SUPABASE_DATABASE_URL")
-    if not dsn:
-        raise SystemExit("Set SUPABASE_DATABASE_URL (postgresql://...)")
-    conn = psycopg2.connect(dsn, sslmode="require")
+    if dsn:
+        conn = psycopg2.connect(dsn, sslmode="require")
+    else:
+        env_path = ROOT / ".env"
+        if not env_path.is_file():
+            raise SystemExit("Set SUPABASE_DATABASE_URL or provide APP_DB_* values in .env")
+        values = {}
+        for raw in env_path.read_text().splitlines():
+            line = raw.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                values[key] = value
+        required = ("APP_DB_HOST", "APP_DB_PORT", "APP_DB_NAME", "APP_DB_USERNAME", "APP_DB_PASSWORD")
+        if any(key not in values for key in required):
+            raise SystemExit(".env is missing one or more APP_DB_* connection settings")
+        conn = psycopg2.connect(
+            host=values["APP_DB_HOST"], port=values["APP_DB_PORT"],
+            dbname=values["APP_DB_NAME"], user=values["APP_DB_USERNAME"],
+            password=values["APP_DB_PASSWORD"], sslmode="require",
+        )
+
     conn.autocommit = False
     try:
         apply_migrations(conn)
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE SCHEMA IF NOT EXISTS agent;
-            CREATE TABLE IF NOT EXISTS agent.savings_goals (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                user_id UUID NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                target_amount NUMERIC(15,2) NOT NULL,
-                current_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
-                target_date DATE,
-                created_at TIMESTAMP NOT NULL DEFAULT now()
-            );
-            CREATE INDEX IF NOT EXISTS idx_savings_goals_user ON agent.savings_goals(user_id);
-        """)
-        conn.commit()
-        cur.execute("SELECT COUNT(*) FROM transactions")
-        already_seeded = cur.fetchone()[0] > 1000
-        if already_seeded:
-            print("transactions already seeded — skipping data seed")
-            return
         user_ids = seed_users(conn)
-        print(f"users: {user_ids}")
-        cat_ids, accounts, cards = seed_supporting_data(conn, user_ids)
-        seed_transactions(conn, user_ids, cat_ids, accounts, cards)
-        seed_snapshots(conn, user_ids)
         cur = conn.cursor()
-        for t in ["transactions", "categories"]:
-            cur.execute(f"SELECT COUNT(*) FROM {t}")
-            print(f"public.{t}: {cur.fetchone()[0]} rows")
-        for s in ["identity.user_profiles", "account.accounts", "account.cards",
-                  "budget.budgets", "debt.debts", "debt.debt_payments",
-                  "dashboard.dashboard_snapshots"]:
-            cur.execute(f"SELECT COUNT(*) FROM {s}")
-            print(f"{s}: {cur.fetchone()[0]} rows")
+        cur.execute("SELECT name, id FROM categories")
+        cat_ids = {name: category_id for name, category_id in cur.fetchall()}
+        seed_transactions(conn, user_ids, cat_ids)
+        cur.execute("SELECT COUNT(*) FROM transactions WHERE user_id=%s", (user_ids[0],))
+        actual_count = cur.fetchone()[0]
+        if actual_count != TARGET_TRANSACTION_COUNT:
+            raise RuntimeError(f"Expected {TARGET_TRANSACTION_COUNT} rows; found {actual_count}")
+        print(f"Verified transaction total for {TARGET_EMAIL}: {actual_count}")
     finally:
         conn.close()
 

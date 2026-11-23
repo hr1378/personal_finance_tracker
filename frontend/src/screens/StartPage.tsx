@@ -126,7 +126,7 @@ export function StartPage() {
         </button>
 
         <p className="mt-6 text-center text-xs text-white/50">
-          Demo login: test@example.com / password123
+          Demo account: demo@example.com / password123
         </p>
       </div>
     </div>

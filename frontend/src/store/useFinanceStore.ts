@@ -11,6 +11,7 @@ interface FinanceStore {
   cards: Card[]
   isLoading: boolean
   error: string | null
+  supabaseConnection: 'checking' | 'connected' | 'unavailable'
 
   // Actions
   fetchTransactions: (userId?: string, type?: 'INCOME' | 'EXPENSE') => Promise<void>
@@ -44,6 +45,7 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
   cards: [],
   isLoading: false,
   error: null,
+  supabaseConnection: 'checking',
 
   fetchTransactions: async (userId?: string, type?: 'INCOME' | 'EXPENSE') => {
     set({ isLoading: true, error: null })
@@ -56,12 +58,12 @@ export const useFinanceStore = create<FinanceStore>((set) => ({
   },
 
   fetchSummary: async (userId?: string) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, error: null, supabaseConnection: 'checking' })
     try {
       const data = await api.getSummary(userId)
-      set({ summary: data, isLoading: false })
+      set({ summary: data, isLoading: false, supabaseConnection: 'connected' })
     } catch {
-      set({ error: 'Failed to fetch summary', isLoading: false })
+      set({ error: 'Failed to fetch summary', isLoading: false, supabaseConnection: 'unavailable' })
     }
   },
 

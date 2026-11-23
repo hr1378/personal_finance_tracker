@@ -27,6 +27,7 @@ function App() {
     error,
     fetchTransactions,
     fetchSummary,
+    supabaseConnection,
     fetchBudgets,
     fetchDebts,
     fetchAccounts,
@@ -206,6 +207,7 @@ function App() {
                 summary={summary ?? { totalIncome: 0, totalExpenses: 0, netCashFlow: 0 }}
                 budgets={budgets}
                 debts={debts}
+                supabaseConnection={supabaseConnection}
               />
             )}
 
